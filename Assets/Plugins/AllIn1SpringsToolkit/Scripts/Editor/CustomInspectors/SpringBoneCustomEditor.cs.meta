@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2cee6b0db02b2b44d8c1ad0a38bdbe51
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Editor/CustomInspectors/SpringBoneCustomEditor.cs
+  uploadId: 743578

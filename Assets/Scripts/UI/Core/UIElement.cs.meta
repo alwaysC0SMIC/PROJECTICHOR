@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e42c1657e45ffa4458323d0aec7a12b0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - Root: {instanceID: 0}
+  - interactable: {instanceID: 0}
+  - springComponent: {instanceID: 0}
+  - clipMask: {instanceID: 0}
+  - enableTween: {fileID: 11400000, guid: 04314febf6bb2fa4c8fda5bdcc65d1b8, type: 2}
+  - disableTween: {fileID: 11400000, guid: 55c2c6d06e3033444943598ede670201, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

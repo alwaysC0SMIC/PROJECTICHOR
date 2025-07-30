@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4cf41b9eff878e0448bd390f4c6cb9e9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Settings/Resources/SpringsToolkitSettings.asset
+  uploadId: 743578

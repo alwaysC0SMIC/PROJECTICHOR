@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 26f7016ace8809a4bacf81da9d9c72c7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Editor/CustomInspectors/CamFovOrSizeSpringComponentCustomEditor.cs
+  uploadId: 743578

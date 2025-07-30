@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 33c87da2c9b1c774ca0497c9d23a0cc1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/BaseSprings/SpringRotation.cs
+  uploadId: 743578

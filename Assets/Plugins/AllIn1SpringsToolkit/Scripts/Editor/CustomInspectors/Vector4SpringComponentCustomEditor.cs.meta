@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4af87597533109643adfe4bdc199cb6f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Editor/CustomInspectors/Vector4SpringComponentCustomEditor.cs
+  uploadId: 743578

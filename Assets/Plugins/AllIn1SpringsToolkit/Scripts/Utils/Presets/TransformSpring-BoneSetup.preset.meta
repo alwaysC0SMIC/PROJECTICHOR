@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9f03ade5817b0a040abfff6c962f9c94
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2655988077585873504
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Utils/Presets/TransformSpring-BoneSetup.preset
+  uploadId: 743578

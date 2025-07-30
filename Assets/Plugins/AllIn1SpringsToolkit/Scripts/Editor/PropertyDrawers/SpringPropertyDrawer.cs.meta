@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 753d7e16913ec8b4e9a1ae222b413015
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 271579
+  packageName: All In 1 Springs Toolkit
+  packageVersion: 1.45
+  assetPath: Assets/Plugins/AllIn1SpringsToolkit/Scripts/Editor/PropertyDrawers/SpringPropertyDrawer.cs
+  uploadId: 743578
