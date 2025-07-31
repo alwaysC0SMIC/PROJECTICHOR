@@ -31,6 +31,14 @@ public class UIElement : MonoBehaviour
     [TitleGroup("State"), ReadOnly, LabelText("✅ Enabled?")]
     public bool isEnabled = true;
 
+    [TitleGroup("State"), LabelText("🎭 Play Animations")]
+    [Tooltip("When enabled, show/hide will play animations. When disabled, show/hide will be instant.")]
+    public bool playAnimations = true;
+
+    [TitleGroup("State"), LabelText("👁 Hide When Disabled")]
+    [Tooltip("When enabled, disabling the element will make it invisible. When disabled, the element stays visible but becomes non-interactive.")]
+    public bool hideWhenDisabled = true;
+
     [TitleGroup("State"), ShowInInspector, ReadOnly, LabelText("📦 Root")]
     public UIBlock Root { get; private set; }
 
@@ -121,6 +129,34 @@ public class UIElement : MonoBehaviour
     [Button("▶ Enable", ButtonSizes.Large), GUIColor(0.55f, 0.9f, 0.55f)]
     public virtual void EnableElement()
     {
+        if (!playAnimations)
+        {
+            EnableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+            return;
+        }
+
+        // Animated version
+        EnableElementAnimated();
+    }
+
+    [Button("⏹ Disable", ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
+    public virtual void DisableElement()
+    {
+        if (!playAnimations)
+        {
+            DisableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+            return;
+        }
+
+        // Animated version
+        DisableElementAnimated();
+    }
+
+    /// <summary>
+    /// Enables the element with animations.
+    /// </summary>
+    private void EnableElementAnimated()
+    {
         // Prepare spring to neutral (no animation here)
         if (springComponent != null)
         {
@@ -148,8 +184,10 @@ public class UIElement : MonoBehaviour
         isEnabled = true;
     }
 
-    [Button("⏹ Disable", ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
-    public virtual void DisableElement()
+    /// <summary>
+    /// Disables the element with animations.
+    /// </summary>
+    private void DisableElementAnimated()
     {
         if (interactable != null) interactable.enabled = false;
 
@@ -157,38 +195,90 @@ public class UIElement : MonoBehaviour
 
         bool hadPresets = disableTweens != null && disableTweens.Count > 0;
 
-        if (hadPresets)
+        if (hideWhenDisabled)
         {
-            PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+            if (hadPresets)
             {
-                if (Root != null) Root.Visible = false;
-                // Don't reset scale here - let the tween handle final state
-            });
-        }
-        else
-        {
-            var t = Root != null
-                ? Root.transform
-                    .DOScale(0f, 0.25f)
-                    .SetEase(Ease.InCubic)
-                : null;
-
-            if (t != null)
-            {
-                t.OnComplete(() => { 
-                    if (Root != null) Root.Visible = false; 
-                    // Don't reset scale here either
+                PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+                {
+                    if (Root != null) Root.Visible = false;
+                    // Don't reset scale here - let the tween handle final state
                 });
             }
             else
             {
-                if (Root != null) Root.Visible = false;
+                var t = Root != null
+                    ? Root.transform
+                        .DOScale(0f, 0.25f)
+                        .SetEase(Ease.InCubic)
+                    : null;
+
+                if (t != null)
+                {
+                    t.OnComplete(() => { 
+                        if (Root != null) Root.Visible = false; 
+                        // Don't reset scale here either
+                    });
+                }
+                else
+                {
+                    if (Root != null) Root.Visible = false;
+                }
             }
+        }
+        else
+        {
+            // Don't hide the element, but still play disable animations if they exist
+            if (hadPresets)
+            {
+                PlayPresetList(disableTweens, disablePlayMode, onComplete: null);
+            }
+            // If no presets and not hiding, no visual changes needed
         }
 
         EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         OnDisable?.Invoke();
         isEnabled = false;
+    }
+
+    #endregion
+
+    #region PUBLIC ACTIONS (FORCED MODES)
+
+    /// <summary>
+    /// Forces the element to enable with animations, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("▶ Force Enable Animated", ButtonSizes.Medium), GUIColor(0.4f, 0.8f, 0.4f)]
+    public void EnableElementForceAnimated()
+    {
+        EnableElementAnimated();
+    }
+
+    /// <summary>
+    /// Forces the element to disable with animations, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("⏹ Force Disable Animated", ButtonSizes.Medium), GUIColor(0.8f, 0.4f, 0.4f)]
+    public void DisableElementForceAnimated()
+    {
+        DisableElementAnimated();
+    }
+
+    /// <summary>
+    /// Forces the element to enable instantly, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("▶ Force Enable Instant", ButtonSizes.Medium), GUIColor(0.6f, 1f, 0.6f)]
+    public void EnableElementForceInstant()
+    {
+        EnableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+    }
+
+    /// <summary>
+    /// Forces the element to disable instantly, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("⏹ Force Disable Instant", ButtonSizes.Medium), GUIColor(1f, 0.6f, 0.6f)]
+    public void DisableElementForceInstant()
+    {
+        DisableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
     }
 
     #endregion
@@ -252,7 +342,7 @@ public class UIElement : MonoBehaviour
         if (toggleInteractable && interactable != null)
             interactable.enabled = false;
 
-        if (Root != null)
+        if (hideWhenDisabled && Root != null)
         {
             Root.Visible = false;
             // Don't reset scale here - preserve whatever state the tweens left it in

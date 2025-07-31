@@ -1477,7 +1477,7 @@ GameObject:
   - component: {fileID: 36011178}
   - component: {fileID: 36011177}
   m_Layer: 5
-  m_Name: Settings_Cont
+  m_Name: Pause_Cont
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1492,7 +1492,7 @@ Transform:
   m_GameObject: {fileID: 36011175}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -720, y: 405, z: 0}
+  m_LocalPosition: {x: -840, y: -405, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1516,7 +1516,7 @@ MonoBehaviour:
   layout:
     Size:
       X:
-        Raw: 0.25
+        Raw: 0.125
         Type: 1
       Y:
         Raw: 0.25
@@ -1632,7 +1632,7 @@ MonoBehaviour:
         Max: Infinity
     Alignment:
       X: -1
-      Y: 1
+      Y: -1
       Z: 0
     AutoSize:
       X: 0
@@ -7971,7 +7971,7 @@ GameObject:
   - component: {fileID: 276550825}
   - component: {fileID: 276550822}
   m_Layer: 5
-  m_Name: Settings_Button
+  m_Name: Pause_Button
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8632,6 +8632,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isEnabled: 0
+  playAnimations: 0
+  hideWhenDisabled: 0
   springComponent: {fileID: 276550823}
   enablePlayMode: 0
   enableTweens:
@@ -17826,12 +17828,12 @@ MonoBehaviour:
   pageRoot: {fileID: 476227939}
   clipMask: {fileID: 476227942}
   clipFadeDuration: 0.75
-  useFullPageAnimation: 0
-  pageAnimationMode: 2
+  useFullPageAnimation: 1
+  pageAnimationMode: 3
   useElementStagger: 1
   elementStaggerDuration: 0.08
-  tweenIn: {fileID: 11400000, guid: 04314febf6bb2fa4c8fda5bdcc65d1b8, type: 2}
-  tweenOut: {fileID: 11400000, guid: 55c2c6d06e3033444943598ede670201, type: 2}
+  tweenIn: {fileID: 11400000, guid: f15ad5c3e6780d449b73bd1997c159e9, type: 2}
+  tweenOut: {fileID: 11400000, guid: bfcdca680ec0c724192956bab7c5dd2f, type: 2}
   runIntroSequentially: 0
   runOutroSequentially: 0
   UIPageElements:
@@ -45069,6 +45071,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isEnabled: 1
+  playAnimations: 0
+  hideWhenDisabled: 0
   springComponent: {fileID: 1078295062}
   enablePlayMode: 0
   enableTweens:
@@ -70273,7 +70277,7 @@ GameObject:
   - component: {fileID: 1767549209}
   - component: {fileID: 1767549208}
   m_Layer: 5
-  m_Name: SettingsButton_SpringCont
+  m_Name: PauseButton_SpringCont
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70288,7 +70292,7 @@ Transform:
   m_GameObject: {fileID: 1767549206}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -156, y: 51, z: 0}
+  m_LocalPosition: {x: 0, y: 15, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -70312,10 +70316,10 @@ MonoBehaviour:
   layout:
     Size:
       X:
-        Raw: 0.35
+        Raw: 1
         Type: 1
       Y:
-        Raw: 168
+        Raw: 240
         Type: 0
       Z:
         Raw: 0
