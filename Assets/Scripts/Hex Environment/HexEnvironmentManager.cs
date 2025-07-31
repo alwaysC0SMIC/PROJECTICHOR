@@ -3,6 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using Sirenix.OdinInspector;
 
+public enum LanePreset
+{
+    [Tooltip("Custom settings - use manual configuration")]
+    Custom,
+    [Tooltip("Beginner-friendly: Straight, predictable lanes")]
+    Beginner,
+    [Tooltip("Balanced gameplay with moderate complexity")]
+    Balanced,
+    [Tooltip("Challenging: High curviness and randomness")]
+    Chaotic,
+    [Tooltip("Strategic: Spread lanes with potential merging")]
+    Strategic,
+    [Tooltip("Defensive: Short, focused lanes for tower placement")]
+    Defensive,
+    [Tooltip("Speed: Long, direct lanes for fast gameplay")]
+    Speedway,
+    [Tooltip("Maze-like: High curviness with frequent merging")]
+    Labyrinth,
+    [Tooltip("Minimal: Few, simple lanes")]
+    Minimalist,
+    [Tooltip("Maximum complexity with all features enabled")]
+    Maximum
+}
+
 [System.Serializable]
 public struct HexCoordinates
 {
@@ -156,7 +180,63 @@ public class HexEnvironmentManager : MonoBehaviour
     private int generationSeed = 0;
     
     [TabGroup("TD", "🏰 Tower Defense")]
-    [TitleGroup("TD/Lane Generation")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Tooltip("Auto-randomize lane settings when seed changes")]
+    private bool autoRandomizeLanes = true;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Tooltip("Apply preset configurations for different gameplay styles")]
+    private LanePreset lanePreset = LanePreset.Custom;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [Button(ButtonSizes.Medium, Name = "🎯 Apply Preset")]
+    [GUIColor(0.6f, 0.8f, 1f)]
+    private void ApplyPresetButtonPressed()
+    {
+        ApplyLanePreset();
+    }
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(0f, 1f), Tooltip("Overall curviness multiplier for all lanes")]
+    private float globalCurviness = 1f;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(0f, 1f), Tooltip("Overall randomness multiplier for all lanes")]
+    private float globalRandomness = 1f;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(0f, 1f), Tooltip("Probability that any lane will allow merging")]
+    private float globalMergeProbability = 0.4f;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(3, 12), Tooltip("Base length for randomized lanes")]
+    private int baseLaneLength = 6;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(1, 4), Tooltip("Maximum variation from base lane length")]
+    private int lengthVariation = 2;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(0f, 1f), Tooltip("How much to spread out lane starting directions (0 = random, 1 = maximum spread)")]
+    private float directionSpreadWeight = 0.8f;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Overall Lane Settings")]
+    [SerializeField, Range(0f, 60f), Tooltip("Minimum angle between adjacent lane directions in degrees")]
+    private float minAngleBetweenLanes = 30f;
+    
+    // Force to edge is now always enabled - no longer configurable
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Individual Lane Settings")]
     [SerializeField, Tooltip("Configuration for each lane")]
     [ListDrawerSettings(ShowIndexLabels = true, DraggableItems = false, ShowPaging = false)]
     private List<LaneConfiguration> laneConfigurations = new List<LaneConfiguration>();
@@ -175,6 +255,31 @@ public class HexEnvironmentManager : MonoBehaviour
     [TitleGroup("TD/Gameplay Features")]
     [SerializeField, Tooltip("Generate only gizmos without instantiating GameObjects")]
     private bool gizmosOnlyMode = false;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Validation Settings")]
+    [SerializeField, Range(3, 20), Tooltip("Maximum attempts to regenerate if validation fails")]
+    private int maxValidationAttempts = 10;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Validation Settings")]
+    [SerializeField, Tooltip("Automatically validate environment during generation to prevent clumping and ensure lane completion")]
+    private bool enableValidation = true;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Validation Settings")]
+    [SerializeField, Tooltip("Try to repair issues before full regeneration")]
+    private bool enableTargetedRepairs = true;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Validation Settings")]
+    [SerializeField, Range(50, 100), Tooltip("Minimum percentage of clumping issues that must be fixed for repair to be considered successful")]
+    private int repairSuccessThreshold = 80;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Validation Settings")]
+    [SerializeField, Tooltip("Check for clumping during generation and avoid creating problematic patterns")]
+    private bool preventClumpingDuringGeneration = true;
     
     [TabGroup("TD", "🏰 Tower Defense")]
     [TitleGroup("TD/Generation Actions")]
@@ -305,6 +410,11 @@ public class HexEnvironmentManager : MonoBehaviour
     
     [TabGroup("Debug", "🔧 Debug & Visualization")]
     [TitleGroup("Debug/Hex Colors")]
+    [SerializeField, Tooltip("Color for pathway connections")]
+    private Color pathwayConnectionColor = new Color(1f, 0.8f, 0.2f, 1f);
+    
+    [TabGroup("Debug", "🔧 Debug & Visualization")]
+    [TitleGroup("Debug/Hex Colors")]
     [SerializeField, Tooltip("Color for environment hexes")]
     private Color environmentColor = new Color(0.7f, 0.7f, 0.7f, 1f);
     
@@ -363,7 +473,19 @@ public class HexEnvironmentManager : MonoBehaviour
         // Ensure we have the right number of lane configurations
         while (laneConfigurations.Count < numberOfLanes)
         {
-            float direction = (360f / numberOfLanes) * laneConfigurations.Count;
+            // Use spread-weighted direction assignment for initial setup too
+            float direction;
+            if (directionSpreadWeight > 0.5f && numberOfLanes > 1)
+            {
+                // Use evenly spaced directions for better initial spread
+                direction = (360f / numberOfLanes) * laneConfigurations.Count;
+            }
+            else
+            {
+                // Use random directions
+                direction = Random.Range(0f, 360f);
+            }
+            
             laneConfigurations.Add(new LaneConfiguration
             {
                 direction = direction,
@@ -390,10 +512,17 @@ public class HexEnvironmentManager : MonoBehaviour
         ClearExistingHexes();
         InitializeLaneConfigurations();
         
-        // Initialize random seed
+        // Initialize random seed and auto-randomize lanes if needed
         if (generationSeed == 0)
         {
             generationSeed = Random.Range(1, int.MaxValue);
+            
+            // Auto-randomize lanes when generating with a new random seed
+            if (autoRandomizeLanes)
+            {
+                Random.InitState(generationSeed); // Initialize with the new seed first
+                RandomizeAllLaneConfigurations();
+            }
         }
         Random.InitState(generationSeed);
         
@@ -416,8 +545,8 @@ public class HexEnvironmentManager : MonoBehaviour
         // Step 1: Generate all hex coordinates
         GenerateAllHexCoordinates();
         
-        // Step 2: Generate lanes from center outwards
-        GenerateLanes();
+        // Step 2: Generate lanes from center outwards with validation
+        GenerateLanesWithValidation();
         
         // Step 3: Generate defender spots adjacent to pathways
         if (autoGenerateDefenderSpots)
@@ -441,7 +570,278 @@ public class HexEnvironmentManager : MonoBehaviour
     public void RandomizeSeed()
     {
         generationSeed = Random.Range(1, int.MaxValue);
-        Debug.Log($"[HexEnvironmentManager] New seed: {generationSeed}");
+        
+        // Auto-randomize lanes if enabled
+        if (autoRandomizeLanes)
+        {
+            RandomizeAllLaneConfigurations();
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] New seed: {generationSeed}" + (autoRandomizeLanes ? " (lanes auto-randomized)" : ""));
+    }
+    
+    public void RandomizeAllLaneConfigurations()
+    {
+        InitializeLaneConfigurations(); // Ensure we have the right number of lanes
+        
+        // Generate well-spread directions first
+        List<float> spreadDirections = GenerateSpreadDirections();
+        
+        for (int i = 0; i < laneConfigurations.Count; i++)
+        {
+            var config = laneConfigurations[i];
+            
+            // Ensure all lanes are always active (user controls lane count)
+            config.isActive = true; // All lanes are always active
+            
+            // Use spread directions with some randomness based on weight
+            if (i < spreadDirections.Count)
+            {
+                float spreadDirection = spreadDirections[i];
+                float randomDirection = Random.Range(0f, 360f);
+                config.direction = Mathf.Lerp(randomDirection, spreadDirection, directionSpreadWeight);
+            }
+            else
+            {
+                config.direction = Random.Range(0f, 360f);
+            }
+            
+            config.length = Mathf.Clamp(baseLaneLength + Random.Range(-lengthVariation, lengthVariation + 1), 2, 15);
+            config.laneColor = Color.HSVToRGB(Random.Range(0f, 1f), Random.Range(0.6f, 1f), Random.Range(0.7f, 1f));
+            
+            // Randomize path behavior using global multipliers
+            config.curviness = Random.Range(0f, 0.8f) * globalCurviness;
+            config.randomnessFactor = Random.Range(0f, 0.6f) * globalRandomness;
+            
+            // Randomize lane merging settings using global probability
+            config.allowMerging = Random.value < globalMergeProbability;
+            if (config.allowMerging)
+            {
+                // Random merge target (-1 for auto-find, or specific lane)
+                config.mergeWithLane = Random.value > 0.5f ? -1 : Random.Range(0, numberOfLanes);
+                config.mergeAtDistance = Random.Range(2, 6);
+                config.mergeProbability = Random.Range(0.3f, 0.9f);
+            }
+            else
+            {
+                config.mergeWithLane = -1;
+                config.mergeAtDistance = 3;
+                config.mergeProbability = 0.7f;
+            }
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] Randomized all {laneConfigurations.Count} lane configurations (lane count remains user-controlled)!");
+    }
+    
+    public void ApplyLanePreset()
+    {
+        if (lanePreset == LanePreset.Custom) return;
+        
+        // Apply preset values to global settings
+        switch (lanePreset)
+        {
+            case LanePreset.Beginner:
+                numberOfLanes = 2;
+                globalCurviness = 0.1f;
+                globalRandomness = 0.0f;
+                globalMergeProbability = 0.0f;
+                baseLaneLength = 5;
+                lengthVariation = 1;
+                directionSpreadWeight = 1.0f;
+                minAngleBetweenLanes = 60f;
+                break;
+                
+            case LanePreset.Balanced:
+                numberOfLanes = 3;
+                globalCurviness = 0.4f;
+                globalRandomness = 0.3f;
+                globalMergeProbability = 0.2f;
+                baseLaneLength = 6;
+                lengthVariation = 2;
+                directionSpreadWeight = 0.8f;
+                minAngleBetweenLanes = 30f;
+                break;
+                
+            case LanePreset.Chaotic:
+                numberOfLanes = 4;
+                globalCurviness = 0.9f;
+                globalRandomness = 0.8f;
+                globalMergeProbability = 0.6f;
+                baseLaneLength = 7;
+                lengthVariation = 3;
+                directionSpreadWeight = 0.3f;
+                minAngleBetweenLanes = 15f;
+                break;
+                
+            case LanePreset.Strategic:
+                numberOfLanes = 4;
+                globalCurviness = 0.5f;
+                globalRandomness = 0.4f;
+                globalMergeProbability = 0.7f;
+                baseLaneLength = 8;
+                lengthVariation = 2;
+                directionSpreadWeight = 0.9f;
+                minAngleBetweenLanes = 25f;
+                break;
+                
+            case LanePreset.Defensive:
+                numberOfLanes = 3;
+                globalCurviness = 0.2f;
+                globalRandomness = 0.1f;
+                globalMergeProbability = 0.1f;
+                baseLaneLength = 4;
+                lengthVariation = 1;
+                directionSpreadWeight = 1.0f;
+                minAngleBetweenLanes = 45f;
+                break;
+                
+            case LanePreset.Speedway:
+                numberOfLanes = 2;
+                globalCurviness = 0.0f;
+                globalRandomness = 0.0f;
+                globalMergeProbability = 0.0f;
+                baseLaneLength = 10;
+                lengthVariation = 1;
+                directionSpreadWeight = 1.0f;
+                minAngleBetweenLanes = 90f;
+                break;
+                
+            case LanePreset.Labyrinth:
+                numberOfLanes = 5;
+                globalCurviness = 1.0f;
+                globalRandomness = 0.7f;
+                globalMergeProbability = 0.8f;
+                baseLaneLength = 9;
+                lengthVariation = 4;
+                directionSpreadWeight = 0.5f;
+                minAngleBetweenLanes = 10f;
+                break;
+                
+            case LanePreset.Minimalist:
+                numberOfLanes = 1;
+                globalCurviness = 0.2f;
+                globalRandomness = 0.1f;
+                globalMergeProbability = 0.0f;
+                baseLaneLength = 6;
+                lengthVariation = 1;
+                directionSpreadWeight = 1.0f;
+                minAngleBetweenLanes = 60f;
+                break;
+                
+            case LanePreset.Maximum:
+                numberOfLanes = 6;
+                globalCurviness = 0.8f;
+                globalRandomness = 0.6f;
+                globalMergeProbability = 0.5f;
+                baseLaneLength = 8;
+                lengthVariation = 3;
+                directionSpreadWeight = 0.7f;
+                minAngleBetweenLanes = 20f;
+                break;
+        }
+        
+        // Reinitialize lane configurations with new settings
+        InitializeLaneConfigurations();
+        
+        // If auto-randomize is enabled, apply randomization with new global settings
+        if (autoRandomizeLanes)
+        {
+            RandomizeAllLaneConfigurations();
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] Applied {lanePreset} preset configuration!");
+    }
+    
+    private List<float> GenerateSpreadDirections()
+    {
+        List<float> directions = new List<float>();
+        
+        if (numberOfLanes <= 1)
+        {
+            directions.Add(Random.Range(0f, 360f));
+            return directions;
+        }
+        
+        // Start with evenly spaced directions as the ideal spread
+        float baseSpacing = 360f / numberOfLanes;
+        float startOffset = Random.Range(0f, baseSpacing); // Random rotation of the whole pattern
+        
+        for (int i = 0; i < numberOfLanes; i++)
+        {
+            float idealDirection = (startOffset + i * baseSpacing) % 360f;
+            directions.Add(idealDirection);
+        }
+        
+        // Apply some controlled randomness while maintaining minimum spacing
+        for (int attempts = 0; attempts < 10; attempts++) // Try to improve spacing
+        {
+            bool improved = false;
+            
+            for (int i = 0; i < directions.Count; i++)
+            {
+                // Check if this direction is too close to others
+                float minDistanceToOthers = float.MaxValue;
+                
+                for (int j = 0; j < directions.Count; j++)
+                {
+                    if (i == j) continue;
+                    
+                    float distance = Mathf.Min(
+                        Mathf.Abs(directions[i] - directions[j]),
+                        360f - Mathf.Abs(directions[i] - directions[j])
+                    );
+                    
+                    minDistanceToOthers = Mathf.Min(minDistanceToOthers, distance);
+                }
+                
+                // If too close, try to move it to a better position
+                if (minDistanceToOthers < minAngleBetweenLanes)
+                {
+                    float newDirection = FindBestDirectionSpot(directions, i);
+                    if (newDirection != directions[i])
+                    {
+                        directions[i] = newDirection;
+                        improved = true;
+                    }
+                }
+            }
+            
+            if (!improved) break; // No more improvements possible
+        }
+        
+        return directions;
+    }
+    
+    private float FindBestDirectionSpot(List<float> existingDirections, int excludeIndex)
+    {
+        float bestDirection = existingDirections[excludeIndex];
+        float bestMinDistance = 0f;
+        
+        // Try different angles and find the one with maximum minimum distance to others
+        for (float testAngle = 0f; testAngle < 360f; testAngle += 5f) // Test every 5 degrees
+        {
+            float minDistanceToOthers = float.MaxValue;
+            
+            for (int i = 0; i < existingDirections.Count; i++)
+            {
+                if (i == excludeIndex) continue;
+                
+                float distance = Mathf.Min(
+                    Mathf.Abs(testAngle - existingDirections[i]),
+                    360f - Mathf.Abs(testAngle - existingDirections[i])
+                );
+                
+                minDistanceToOthers = Mathf.Min(minDistanceToOthers, distance);
+            }
+            
+            if (minDistanceToOthers > bestMinDistance)
+            {
+                bestMinDistance = minDistanceToOthers;
+                bestDirection = testAngle;
+            }
+        }
+        
+        return bestDirection;
     }
     
     public void ClearExistingHexes()
@@ -526,124 +926,866 @@ public class HexEnvironmentManager : MonoBehaviour
     {
         generatedLanes.Clear();
         
+        // Step 1: Find well-spaced starting positions on the edge
+        List<HexCoordinates> startingPositions = FindSpacedEdgeStartingPositions();
+        
+        if (startingPositions.Count == 0)
+        {
+            Debug.LogError("[HexEnvironmentManager] Could not find any valid starting positions!");
+            return;
+        }
+        
+        // Initialize lanes with their starting positions
+        for (int i = 0; i < startingPositions.Count; i++)
+        {
+            List<HexCoordinates> lane = new List<HexCoordinates>();
+            lane.Add(startingPositions[i]);
+            generatedLanes.Add(lane);
+        }
+        
+        // Step 2: Generate lanes in parallel waves
+        GenerateLanesInWaves();
+        
+        // Step 3: Apply lane data to hex grid
+        ApplyLanesToHexGrid();
+    }
+    
+    private List<HexCoordinates> FindSpacedEdgeStartingPositions()
+    {
+        List<HexCoordinates> startingPositions = new List<HexCoordinates>();
+        List<HexCoordinates> edgeHexes = GetHexRing(HexCoordinates.Zero, gridRadius);
+        
+        // Calculate minimum distance between starting positions
+        float minDistanceBetweenStarts = Mathf.Max(3f, gridRadius * 0.4f); // At least 3 hexes apart
+        
+        // Try to place starting positions with good spacing
         for (int laneIndex = 0; laneIndex < numberOfLanes; laneIndex++)
         {
             if (!laneConfigurations[laneIndex].isActive) continue;
             
             var config = laneConfigurations[laneIndex];
-            List<HexCoordinates> laneCoords = new List<HexCoordinates>();
             
-            // Calculate direction vector with curviness and randomness
-            float baseDirection = config.direction;
-            float directionVariance = config.randomnessFactor * Random.Range(-20f, 20f);
-            float radians = (baseDirection + directionVariance) * Mathf.Deg2Rad;
-            Vector3 direction = new Vector3(Mathf.Cos(radians), 0, Mathf.Sin(radians));
+            // Find best edge hex for this lane's direction
+            HexCoordinates bestStart = FindBestEdgeHexForDirection(edgeHexes, config.direction, startingPositions, minDistanceBetweenStarts);
             
-            // Generate lane path from center outwards
-            HexCoordinates currentHex = HexCoordinates.Zero;
-            laneCoords.Add(currentHex);
-            Vector3 currentDirection = direction;
-            
-            for (int distance = 1; distance <= config.length; distance++)
+            if (bestStart != HexCoordinates.Zero)
             {
-                // Apply curviness - gradually change direction
-                if (config.curviness > 0f && distance > 1)
+                startingPositions.Add(bestStart);
+            }
+        }
+        
+        return startingPositions;
+    }
+    
+    private HexCoordinates FindBestEdgeHexForDirection(List<HexCoordinates> edgeHexes, float direction, List<HexCoordinates> existingStarts, float minDistance)
+    {
+        // Convert direction to radians
+        float radians = direction * Mathf.Deg2Rad;
+        Vector3 dirVector = new Vector3(Mathf.Cos(radians), 0, Mathf.Sin(radians));
+        
+        HexCoordinates bestHex = HexCoordinates.Zero;
+        float bestScore = -1f;
+        
+        foreach (var hex in edgeHexes)
+        {
+            // Check distance to existing starts
+            bool tooClose = false;
+            foreach (var existingStart in existingStarts)
+            {
+                if (HexDistance(hex, existingStart) < minDistance)
                 {
-                    float curveAmount = config.curviness * Random.Range(-30f, 30f) * Mathf.Deg2Rad;
-                    float newAngle = Mathf.Atan2(currentDirection.z, currentDirection.x) + curveAmount;
-                    currentDirection = new Vector3(Mathf.Cos(newAngle), 0, Mathf.Sin(newAngle));
-                }
-                
-                // Find the hex closest to our desired direction
-                HexCoordinates nextHex = FindClosestHexInDirection(currentHex, currentDirection);
-                
-                // Add some randomness to path selection based on randomness factor
-                if (config.randomnessFactor > 0f && Random.value < config.randomnessFactor && distance > 1)
-                {
-                    var alternatives = GetAlternativeDirections(currentHex, currentDirection);
-                    if (alternatives.Count > 0)
-                    {
-                        nextHex = alternatives[Random.Range(0, alternatives.Count)];
-                    }
-                }
-                
-                // Check for lane merging if enabled
-                if (config.allowMerging && distance >= config.mergeAtDistance && 
-                    Random.value < config.mergeProbability)
-                {
-                    HexCoordinates mergeTarget = FindBestMergeTarget(currentHex, config, laneIndex);
-                    if (mergeTarget != currentHex)
-                    {
-                        nextHex = mergeTarget;
-                    }
-                }
-                
-                if (hexGrid.ContainsKey(nextHex))
-                {
-                    laneCoords.Add(nextHex);
-                    currentHex = nextHex;
-                }
-                else
-                {
-                    break; // Reached edge of grid
+                    tooClose = true;
+                    break;
                 }
             }
             
-            // Apply lane to hex data
-            foreach (var coord in laneCoords)
+            if (tooClose) continue;
+            
+            // Calculate alignment with desired direction
+            Vector3 hexWorldPos = HexToWorldPosition(hex);
+            Vector3 centerWorldPos = HexToWorldPosition(HexCoordinates.Zero);
+            Vector3 hexDirection = (hexWorldPos - centerWorldPos).normalized;
+            float alignment = Vector3.Dot(hexDirection, dirVector);
+            
+            if (alignment > bestScore)
             {
-                if (hexGrid.ContainsKey(coord))
+                bestScore = alignment;
+                bestHex = hex;
+            }
+        }
+        
+        return bestHex;
+    }
+    
+    private void GenerateLanesInWaves()
+    {
+        HashSet<HexCoordinates> occupiedHexes = new HashSet<HexCoordinates>();
+        
+        // Add all starting positions to occupied set
+        foreach (var lane in generatedLanes)
+        {
+            if (lane.Count > 0)
+            {
+                occupiedHexes.Add(lane[0]);
+            }
+        }
+        
+        int maxWaves = gridRadius * 2; // Safety limit
+        
+        for (int wave = 0; wave < maxWaves; wave++)
+        {
+            bool anyLaneProgressed = false;
+            List<HexCoordinates> newOccupiedThisWave = new List<HexCoordinates>();
+            
+            // Process each lane in this wave
+            for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
+            {
+                var lane = generatedLanes[laneIndex];
+                
+                // Skip if lane already reached center
+                if (lane.Count > 0 && lane[lane.Count - 1] == HexCoordinates.Zero)
+                    continue;
+                
+                // Get current position (last hex in lane)
+                HexCoordinates currentPos = lane[lane.Count - 1];
+                
+                // Find next hex for this lane
+                HexCoordinates nextHex = FindNextHexForLane(currentPos, laneIndex, occupiedHexes, newOccupiedThisWave);
+                
+                if (nextHex != currentPos && nextHex != HexCoordinates.Zero)
                 {
-                    hexGrid[coord].type = coord == HexCoordinates.Zero ? HexType.CenterHub : HexType.Pathway;
-                    hexGrid[coord].laneId = laneIndex;
+                    // Check if we can place this hex (maintain spacing from other lanes)
+                    if (CanPlaceHexWithSpacing(nextHex, newOccupiedThisWave, laneIndex))
+                    {
+                        lane.Add(nextHex);
+                        newOccupiedThisWave.Add(nextHex);
+                        anyLaneProgressed = true;
+                    }
+                }
+                else if (nextHex == HexCoordinates.Zero)
+                {
+                    // Reached center
+                    lane.Add(HexCoordinates.Zero);
+                    newOccupiedThisWave.Add(HexCoordinates.Zero);
+                    anyLaneProgressed = true;
                 }
             }
             
-            generatedLanes.Add(laneCoords);
+            // Add this wave's occupied hexes to the global set
+            foreach (var hex in newOccupiedThisWave)
+            {
+                occupiedHexes.Add(hex);
+            }
+            
+            // Check if all lanes have reached center
+            bool allLanesComplete = true;
+            foreach (var lane in generatedLanes)
+            {
+                if (lane.Count == 0 || lane[lane.Count - 1] != HexCoordinates.Zero)
+                {
+                    allLanesComplete = false;
+                    break;
+                }
+            }
+            
+            if (allLanesComplete || !anyLaneProgressed)
+                break;
+        }
+        
+        // Ensure all lanes reach center
+        EnsureAllLanesReachCenter();
+    }
+    
+    private void GenerateLanesWithValidation()
+    {
+        if (!enableValidation)
+        {
+            // Validation disabled, just generate normally
+            GenerateLanes();
+            return;
+        }
+        
+        // First attempt - standard generation
+        GenerateLanes();
+        ApplyLanesToHexGrid();
+        
+        // Try targeted repairs before full regeneration (if enabled)
+        bool repairSuccessful = enableTargetedRepairs ? ValidateAndRepairEnvironment() : ValidateEnvironment();
+        
+        if (!repairSuccessful)
+        {
+            // If repair fails or is disabled, fall back to regeneration attempts
+            for (int attempt = 2; attempt <= maxValidationAttempts; attempt++)
+            {
+                Debug.Log($"[HexEnvironmentManager] Lane generation attempt {attempt}/{maxValidationAttempts}");
+                
+                // Clear and regenerate
+                ClearLaneData();
+                Random.InitState(generationSeed + attempt);
+                GenerateLanes();
+                ApplyLanesToHexGrid();
+                
+                bool currentValid = enableTargetedRepairs ? ValidateAndRepairEnvironment() : ValidateEnvironment();
+                if (currentValid)
+                {
+                    Debug.Log($"[HexEnvironmentManager] Lane generation successful on attempt {attempt}");
+                    return;
+                }
+            }
+            
+            Debug.LogError($"[HexEnvironmentManager] Failed to generate valid environment after {maxValidationAttempts} attempts! Using last attempt.");
+        }
+        else
+        {
+            string method = enableTargetedRepairs ? "with targeted repairs" : "on first attempt";
+            Debug.Log($"[HexEnvironmentManager] Lane generation successful {method}");
         }
     }
     
-    private HexCoordinates FindBestMergeTarget(HexCoordinates currentHex, LaneConfiguration config, int currentLaneIndex)
+    private bool ValidateAndRepairEnvironment()
     {
-        // If specific merge target is set, try to merge with that lane
-        if (config.mergeWithLane >= 0 && config.mergeWithLane < generatedLanes.Count && config.mergeWithLane != currentLaneIndex)
+        bool wasValid = true;
+        
+        // Repair incomplete lanes first
+        if (!ValidateAllLanesReachCenter())
         {
-            var targetLane = generatedLanes[config.mergeWithLane];
-            if (targetLane.Count > 1)
+            Debug.Log("[HexEnvironmentManager] Repairing incomplete lanes...");
+            RepairIncompleteLanes();
+            ApplyLanesToHexGrid(); // Reapply after repair
+            wasValid = false;
+        }
+        
+        // Then check and repair clumping
+        if (!ValidateDefenderAccessibility())
+        {
+            Debug.Log("[HexEnvironmentManager] Repairing pathway clumping...");
+            if (RepairPathwayClumping())
             {
-                // Find closest hex from target lane
-                HexCoordinates closestHex = targetLane[1]; // Skip center
-                float closestDistance = float.MaxValue;
+                ApplyLanesToHexGrid(); // Reapply after repair
+                wasValid = false;
+            }
+            else
+            {
+                Debug.LogWarning("[HexEnvironmentManager] Could not repair clumping - regeneration required");
+                return false;
+            }
+        }
+        
+        // Final validation after repairs
+        bool finalValid = ValidateAllLanesReachCenter() && ValidateDefenderAccessibility();
+        
+        if (!wasValid && finalValid)
+        {
+            Debug.Log("[HexEnvironmentManager] Environment successfully repaired!");
+        }
+        
+        return finalValid;
+    }
+    
+    private void RepairIncompleteLanes()
+    {
+        for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
+        {
+            var lane = generatedLanes[laneIndex];
+            
+            if (lane.Count == 0 || !lane.Contains(HexCoordinates.Zero))
+            {
+                Debug.Log($"[HexEnvironmentManager] Repairing lane {laneIndex} - extending to center");
                 
-                foreach (var coord in targetLane.Skip(1))
+                if (lane.Count == 0)
                 {
-                    float distance = HexDistance(currentHex, coord);
-                    if (distance < closestDistance && distance <= 2) // Only merge if within 2 hex distance
+                    // Lane is completely empty - this shouldn't happen, but handle it
+                    Debug.LogWarning($"[HexEnvironmentManager] Lane {laneIndex} is empty! Skipping repair.");
+                    continue;
+                }
+                
+                // Use A* pathfinding to create optimal path to center
+                HexCoordinates lastHex = lane[lane.Count - 1];
+                List<HexCoordinates> pathToCenter = FindOptimalPathToCenter(lastHex, laneIndex);
+                
+                if (pathToCenter.Count > 0)
+                {
+                    lane.AddRange(pathToCenter);
+                    Debug.Log($"[HexEnvironmentManager] Added {pathToCenter.Count} hexes to complete lane {laneIndex}");
+                }
+            }
+        }
+    }
+    
+    private bool RepairPathwayClumping()
+    {
+        var clumpedHexes = FindClumpedPathwayHexes();
+        
+        if (clumpedHexes.Count == 0)
+            return true; // No clumping found
+        
+        Debug.Log($"[HexEnvironmentManager] Found {clumpedHexes.Count} clumped pathway hexes");
+        
+        int repairedCount = 0;
+        foreach (var clumpedHex in clumpedHexes)
+        {
+            if (TryCreateDefenderAccess(clumpedHex))
+            {
+                repairedCount++;
+            }
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] Repaired {repairedCount}/{clumpedHexes.Count} clumped hexes");
+        
+        // Return true if we repaired enough clumping (configurable threshold)
+        float repairPercentage = clumpedHexes.Count > 0 ? (repairedCount / (float)clumpedHexes.Count) * 100f : 100f;
+        return repairPercentage >= repairSuccessThreshold;
+    }
+    
+    private List<HexCoordinates> FindClumpedPathwayHexes()
+    {
+        var clumpedHexes = new List<HexCoordinates>();
+        
+        foreach (var kvp in hexGrid)
+        {
+            if (kvp.Value.type == HexType.Pathway)
+            {
+                bool hasDefenderAccess = false;
+                
+                foreach (var direction in HEX_DIRECTIONS)
+                {
+                    HexCoordinates adjacent = new HexCoordinates(
+                        kvp.Key.q + direction.q,
+                        kvp.Key.r + direction.r
+                    );
+                    
+                    if (hexGrid.ContainsKey(adjacent) && hexGrid[adjacent].type == HexType.Environment)
                     {
-                        closestDistance = distance;
-                        closestHex = coord;
+                        hasDefenderAccess = true;
+                        break;
                     }
                 }
                 
-                if (closestDistance <= 2)
-                    return closestHex;
-            }
-        }
-        
-        // Auto-find merge target from any existing lane
-        foreach (var lane in generatedLanes)
-        {
-            foreach (var coord in lane.Skip(1)) // Skip center hex
-            {
-                float distance = HexDistance(currentHex, coord);
-                if (distance <= 2 && hexGrid[coord].type == HexType.Pathway)
+                if (!hasDefenderAccess)
                 {
-                    return coord;
+                    clumpedHexes.Add(kvp.Key);
                 }
             }
         }
         
-        return currentHex; // No merge target found
+        return clumpedHexes;
+    }
+    
+    private bool TryCreateDefenderAccess(HexCoordinates pathwayHex)
+    {
+        // Try to convert an adjacent pathway hex to environment if it doesn't break lane connectivity
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates adjacent = new HexCoordinates(
+                pathwayHex.q + direction.q,
+                pathwayHex.r + direction.r
+            );
+            
+            if (hexGrid.ContainsKey(adjacent) && hexGrid[adjacent].type == HexType.Pathway)
+            {
+                // Check if removing this pathway hex would break lane connectivity
+                if (CanSafelyConvertToEnvironment(adjacent))
+                {
+                    // Convert to environment to create defender access
+                    hexGrid[adjacent].type = HexType.Environment;
+                    hexGrid[adjacent].laneId = -1;
+                    
+                    // Remove from all lanes that contain this hex
+                    RemoveHexFromAllLanes(adjacent);
+                    
+                    Debug.Log($"[HexEnvironmentManager] Converted pathway hex {adjacent} to environment to fix clumping at {pathwayHex}");
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    private bool CanSafelyConvertToEnvironment(HexCoordinates hex)
+    {
+        // Check if removing this hex would disconnect any lanes
+        if (hex == HexCoordinates.Zero) return false; // Never remove center
+        
+        // Find which lanes use this hex
+        var affectedLanes = new List<int>();
+        for (int i = 0; i < generatedLanes.Count; i++)
+        {
+            if (generatedLanes[i].Contains(hex))
+            {
+                affectedLanes.Add(i);
+            }
+        }
+        
+        // For each affected lane, check if removing this hex would break connectivity
+        foreach (int laneIndex in affectedLanes)
+        {
+            var lane = generatedLanes[laneIndex];
+            int hexIndex = lane.IndexOf(hex);
+            
+            // If it's the start or end of a lane, it's more critical
+            if (hexIndex == 0 || hexIndex == lane.Count - 1)
+            {
+                return false; // Don't remove start/end hexes
+            }
+            
+            // Check if the hex before and after are still connected through other means
+            if (hexIndex > 0 && hexIndex < lane.Count - 1)
+            {
+                HexCoordinates before = lane[hexIndex - 1];
+                HexCoordinates after = lane[hexIndex + 1];
+                
+                // If adjacent hexes are more than 1 hex apart, this hex is needed for connectivity
+                if (HexDistance(before, after) > 1.0f)
+                {
+                    return false;
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    private void RemoveHexFromAllLanes(HexCoordinates hex)
+    {
+        for (int i = 0; i < generatedLanes.Count; i++)
+        {
+            generatedLanes[i].RemoveAll(h => h.Equals(hex));
+        }
+    }
+    
+    private List<HexCoordinates> FindOptimalPathToCenter(HexCoordinates start, int laneIndex)
+    {
+        // Simple A* pathfinding to center, avoiding existing pathways when possible
+        var openSet = new List<HexCoordinates> { start };
+        var cameFrom = new Dictionary<HexCoordinates, HexCoordinates>();
+        var gScore = new Dictionary<HexCoordinates, float> { [start] = 0 };
+        var fScore = new Dictionary<HexCoordinates, float> { [start] = HexDistance(start, HexCoordinates.Zero) };
+        
+        while (openSet.Count > 0)
+        {
+            // Find hex with lowest fScore
+            HexCoordinates current = openSet.OrderBy(h => fScore.GetValueOrDefault(h, float.MaxValue)).First();
+            
+            if (current == HexCoordinates.Zero)
+            {
+                // Reconstruct path
+                var path = new List<HexCoordinates>();
+                var pathHex = current;
+                
+                while (cameFrom.ContainsKey(pathHex))
+                {
+                    path.Add(pathHex);
+                    pathHex = cameFrom[pathHex];
+                }
+                
+                path.Reverse();
+                path.RemoveAt(0); // Remove start hex (already in lane)
+                return path;
+            }
+            
+            openSet.Remove(current);
+            
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                HexCoordinates neighbor = new HexCoordinates(current.q + direction.q, current.r + direction.r);
+                
+                if (!hexGrid.ContainsKey(neighbor)) continue;
+                
+                float tentativeGScore = gScore.GetValueOrDefault(current, float.MaxValue) + 1;
+                
+                // Add penalty for using existing pathways (but allow it)
+                if (hexGrid[neighbor].type == HexType.Pathway && neighbor != HexCoordinates.Zero)
+                {
+                    tentativeGScore += 0.5f; // Slight penalty
+                }
+                
+                if (tentativeGScore < gScore.GetValueOrDefault(neighbor, float.MaxValue))
+                {
+                    cameFrom[neighbor] = current;
+                    gScore[neighbor] = tentativeGScore;
+                    fScore[neighbor] = tentativeGScore + HexDistance(neighbor, HexCoordinates.Zero);
+                    
+                    if (!openSet.Contains(neighbor))
+                    {
+                        openSet.Add(neighbor);
+                    }
+                }
+            }
+        }
+        
+        // Fallback: direct line to center
+        return new List<HexCoordinates> { HexCoordinates.Zero };
+    }
+    
+    private void ClearLaneData()
+    {
+        // Clear lane data for regeneration
+        generatedLanes.Clear();
+        
+        // Reset hex types (except center)
+        foreach (var kvp in hexGrid)
+        {
+            if (kvp.Key == HexCoordinates.Zero)
+            {
+                kvp.Value.type = HexType.CenterHub; // Keep center as hub
+            }
+            else
+            {
+                kvp.Value.type = HexType.Environment; // Reset everything else
+            }
+        }
+    }
+    
+    private bool ValidateEnvironment()
+    {
+        // Check 1: All lanes must reach center
+        if (!ValidateAllLanesReachCenter())
+        {
+            Debug.LogWarning("[HexEnvironmentManager] Validation failed: Not all lanes reach center");
+            return false;
+        }
+        
+        // Check 2: No clumping (all pathway cells must be accessible to defenders)
+        if (!ValidateDefenderAccessibility())
+        {
+            Debug.LogWarning("[HexEnvironmentManager] Validation failed: Found pathway cells inaccessible to defenders (clumping detected)");
+            return false;
+        }
+        
+        Debug.Log("[HexEnvironmentManager] Environment validation passed");
+        return true;
+    }
+    
+    private bool ValidateAllLanesReachCenter()
+    {
+        foreach (var lane in generatedLanes)
+        {
+            if (lane.Count == 0 || !lane.Contains(HexCoordinates.Zero))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private bool ValidateDefenderAccessibility()
+    {
+        // Get all pathway hexes
+        var pathwayHexes = new HashSet<HexCoordinates>();
+        foreach (var kvp in hexGrid)
+        {
+            if (kvp.Value.type == HexType.Pathway)
+            {
+                pathwayHexes.Add(kvp.Key);
+            }
+        }
+        
+        // Check each pathway hex for defender accessibility
+        foreach (var pathwayHex in pathwayHexes)
+        {
+            bool hasDefenderAccess = false;
+            
+            // Check all adjacent hexes
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                HexCoordinates adjacent = new HexCoordinates(
+                    pathwayHex.q + direction.q, 
+                    pathwayHex.r + direction.r
+                );
+                
+                // If adjacent hex is within grid and is environment (potential defender spot)
+                if (hexGrid.ContainsKey(adjacent) && hexGrid[adjacent].type == HexType.Environment)
+                {
+                    hasDefenderAccess = true;
+                    break;
+                }
+            }
+            
+            if (!hasDefenderAccess)
+            {
+                Debug.LogWarning($"[HexEnvironmentManager] Pathway hex at {pathwayHex} has no adjacent environment hexes for defender placement (clumping)");
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [Button("🔍 Validate Current Environment")]
+    public void ValidateCurrentEnvironment()
+    {
+        if (hexGrid == null || hexGrid.Count == 0)
+        {
+            Debug.LogWarning("[HexEnvironmentManager] No environment to validate. Generate environment first.");
+            return;
+        }
+        
+        bool isValid = ValidateEnvironment();
+        
+        if (isValid)
+        {
+            Debug.Log("[HexEnvironmentManager] ✅ Current environment passed validation!");
+        }
+        else
+        {
+            Debug.LogWarning("[HexEnvironmentManager] ❌ Current environment failed validation. Consider regenerating.");
+        }
+    }
+    
+    private HexCoordinates FindNextHexForLane(HexCoordinates currentPos, int laneIndex, HashSet<HexCoordinates> globalOccupied, List<HexCoordinates> waveOccupied)
+    {
+        // Check if center is adjacent - if so, go there immediately
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates adjacent = new HexCoordinates(currentPos.q + direction.q, currentPos.r + direction.r);
+            if (adjacent == HexCoordinates.Zero)
+            {
+                return HexCoordinates.Zero;
+            }
+        }
+        
+        // Find best next hex toward center
+        List<(HexCoordinates hex, float score)> candidates = new List<(HexCoordinates, float)>();
+        
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates candidate = new HexCoordinates(currentPos.q + direction.q, currentPos.r + direction.r);
+            
+            // Must be within grid bounds
+            if (!hexGrid.ContainsKey(candidate)) continue;
+            
+            // Calculate score for this candidate
+            float score = CalculateWaveHexScore(candidate, currentPos, laneIndex);
+            
+            if (score > 0)
+            {
+                candidates.Add((candidate, score));
+            }
+        }
+        
+        // Sort by score and try to place the best candidate
+        candidates.Sort((a, b) => b.score.CompareTo(a.score));
+        
+        foreach (var (candidate, score) in candidates)
+        {
+            // Allow occasional overlap but prefer unoccupied hexes
+            bool isOccupied = globalOccupied.Contains(candidate) || waveOccupied.Contains(candidate);
+            
+            if (!isOccupied)
+            {
+                return candidate; // Prefer unoccupied hexes
+            }
+        }
+        
+        // If all good candidates are occupied, allow overlap for the best one
+        if (candidates.Count > 0)
+        {
+            return candidates[0].hex;
+        }
+        
+        return currentPos; // No valid moves
+    }
+    
+    private float CalculateWaveHexScore(HexCoordinates hex, HexCoordinates from, int laneIndex)
+    {
+        // Distance to center (40% weight) - closer is better
+        float distanceToCenter = HexDistance(hex, HexCoordinates.Zero);
+        float maxDistance = gridRadius;
+        float distanceScore = (1f - (distanceToCenter / maxDistance)) * 0.4f;
+        
+        // Direction toward center (25% weight)
+        Vector3 hexWorldPos = HexToWorldPosition(hex);
+        Vector3 fromWorldPos = HexToWorldPosition(from);
+        Vector3 centerWorldPos = HexToWorldPosition(HexCoordinates.Zero);
+        Vector3 moveDirection = (hexWorldPos - fromWorldPos).normalized;
+        Vector3 toCenterDirection = (centerWorldPos - fromWorldPos).normalized;
+        float directionScore = Vector3.Dot(moveDirection, toCenterDirection) * 0.25f;
+        
+        // Defender accessibility (20% weight)
+        float accessibilityScore = HasAdjacentDefenderSpots(hex) ? 0.2f : 0f;
+        
+        // Anti-clumping score (15% weight) - prevent creating isolated pathway clusters
+        float antiClumpingScore = 0f;
+        if (preventClumpingDuringGeneration && enableValidation)
+        {
+            antiClumpingScore = CalculateAntiClumpingScore(hex) * 0.15f;
+        }
+        
+        return distanceScore + directionScore + accessibilityScore + antiClumpingScore;
+    }
+    
+    private float CalculateAntiClumpingScore(HexCoordinates hex)
+    {
+        int adjacentEnvironmentCount = 0;
+        int adjacentPathwayCount = 0;
+        
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates adjacent = new HexCoordinates(hex.q + direction.q, hex.r + direction.r);
+            
+            if (hexGrid.ContainsKey(adjacent))
+            {
+                var adjacentType = hexGrid[adjacent].type;
+                if (adjacentType == HexType.Environment)
+                {
+                    adjacentEnvironmentCount++;
+                }
+                else if (adjacentType == HexType.Pathway)
+                {
+                    adjacentPathwayCount++;
+                }
+            }
+        }
+        
+        // Prefer hexes that maintain defender access (have adjacent environment hexes)
+        // Penalize hexes that would create large pathway clusters
+        float environmentScore = adjacentEnvironmentCount > 0 ? 1f : 0f;
+        float clusterPenalty = adjacentPathwayCount > 3 ? -0.5f : 0f; // Penalize if surrounded by pathways
+        
+        return environmentScore + clusterPenalty;
+    }
+    
+    private bool CanPlaceHexWithSpacing(HexCoordinates hex, List<HexCoordinates> otherNewHexes, int laneIndex)
+    {
+        // Check spacing against other hexes being placed this wave
+        foreach (var otherHex in otherNewHexes)
+        {
+            float distance = HexDistance(hex, otherHex);
+            if (distance < 2f) // At least 1 hex gap between lanes
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    private void EnsureAllLanesReachCenter()
+    {
+        for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
+        {
+            var lane = generatedLanes[laneIndex];
+            
+            // If lane doesn't reach center, force a connection
+            if (lane.Count == 0 || lane[lane.Count - 1] != HexCoordinates.Zero)
+            {
+                // Add center directly if we're close enough
+                HexCoordinates lastHex = lane[lane.Count - 1];
+                if (HexDistance(lastHex, HexCoordinates.Zero) <= 2f)
+                {
+                    lane.Add(HexCoordinates.Zero);
+                }
+                else
+                {
+                    // Force a path to center
+                    List<HexCoordinates> pathToCenter = ForcePathToCenter(lastHex);
+                    lane.AddRange(pathToCenter);
+                }
+            }
+        }
+    }
+    
+    private List<HexCoordinates> ForcePathToCenter(HexCoordinates from)
+    {
+        List<HexCoordinates> path = new List<HexCoordinates>();
+        HexCoordinates current = from;
+        
+        while (current != HexCoordinates.Zero && path.Count < gridRadius)
+        {
+            HexCoordinates next = GetClosestHexToCenter(current);
+            if (next == current) break; // Can't move closer
+            
+            path.Add(next);
+            current = next;
+        }
+        
+        if (current != HexCoordinates.Zero)
+        {
+            path.Add(HexCoordinates.Zero);
+        }
+        
+        return path;
+    }
+    
+    private void ApplyLanesToHexGrid()
+    {
+        // Apply each lane to the hex grid
+        for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
+        {
+            var lane = generatedLanes[laneIndex];
+            bool reachesCenter = lane.Contains(HexCoordinates.Zero);
+            
+            foreach (var coord in lane)
+            {
+                if (hexGrid.ContainsKey(coord))
+                {
+                    // Mark center as CenterHub, everything else as Pathway
+                    if (coord == HexCoordinates.Zero)
+                    {
+                        hexGrid[coord].type = HexType.CenterHub;
+                    }
+                    else
+                    {
+                        hexGrid[coord].type = HexType.Pathway;
+                    }
+                    
+                    // Assign lane ID - allow overlaps but track them
+                    if (hexGrid[coord].laneId == -1)
+                    {
+                        hexGrid[coord].laneId = laneIndex;
+                    }
+                    else if (hexGrid[coord].laneId != laneIndex)
+                    {
+                        hexGrid[coord].isJunctionPoint = true;
+                    }
+                }
+            }
+            
+            Debug.Log($"[HexEnvironmentManager] Lane {laneIndex} generated with {lane.Count} hexes, reaches center: {reachesCenter}");
+        }
+    }
+    
+    private bool HasAdjacentDefenderSpots(HexCoordinates hex)
+    {
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates adjacent = new HexCoordinates(hex.q + direction.q, hex.r + direction.r);
+            
+            if (hexGrid.ContainsKey(adjacent))
+            {
+                var hexData = hexGrid[adjacent];
+                // Check if adjacent hex is environment (can become defender spot) or already a defender spot
+                if (hexData.type == HexType.Environment || hexData.type == HexType.DefenderSpot)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    private HexCoordinates GetClosestHexToCenter(HexCoordinates from)
+    {
+        HexCoordinates best = from;
+        float bestDistance = HexDistance(from, HexCoordinates.Zero);
+        
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates candidate = new HexCoordinates(from.q + direction.q, from.r + direction.r);
+            if (hexGrid.ContainsKey(candidate))
+            {
+                float distance = HexDistance(candidate, HexCoordinates.Zero);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+        }
+        
+        return best;
     }
     
     private float HexDistance(HexCoordinates a, HexCoordinates b)
@@ -762,6 +1904,7 @@ public class HexEnvironmentManager : MonoBehaviour
         HexCoordinates bestHex = from;
         float bestDot = -1f;
         
+        // First pass: try to find hex in desired direction that's not already in current lane
         foreach (var direction in HEX_DIRECTIONS)
         {
             HexCoordinates candidate = new HexCoordinates(from.q + direction.q, from.r + direction.r);
@@ -780,7 +1923,23 @@ public class HexEnvironmentManager : MonoBehaviour
             }
         }
         
-        return bestHex;
+        // If we found a valid direction, return it
+        if (bestHex != from && hexGrid.ContainsKey(bestHex))
+        {
+            return bestHex;
+        }
+        
+        // Fallback: if no good direction found, just pick any valid adjacent hex
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates candidate = new HexCoordinates(from.q + direction.q, from.r + direction.r);
+            if (hexGrid.ContainsKey(candidate))
+            {
+                return candidate; // Return first valid neighbor
+            }
+        }
+        
+        return from; // No valid moves (shouldn't happen if grid is properly generated)
     }
     
     private List<HexCoordinates> GetAlternativeDirections(HexCoordinates from, Vector3 preferredDirection)
@@ -1195,6 +2354,9 @@ public class HexEnvironmentManager : MonoBehaviour
                 
                 // Draw spawn portal effect inside cylinder scaled to hex size
                 DrawSpawnPortal(center + Vector3.up * (size * 0.2f), size * 0.2f, solidColor);
+                
+                // Draw attack path arrows from edge spawn to center and connected pathways
+                DrawAttackPathArrows(center, size, laneId, solidColor);
                 break;
         }
     }
@@ -1280,6 +2442,89 @@ public class HexEnvironmentManager : MonoBehaviour
                 Gizmos.DrawLine(point1, point2);
             }
         }
+    }
+    
+    private void DrawAttackPathArrows(Vector3 spawnCenter, float hexSize, int spawnLaneId, Color color)
+    {
+        // Find the current spawn hex coordinates
+        HexCoordinates spawnCoord = WorldToHex(spawnCenter);
+        
+        // Get connected pathway hexes (adjacent hexes that are pathways)
+        List<Vector3> attackDirections = new List<Vector3>();
+        
+        // Check all 6 adjacent hexes for pathway connections
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates adjacentCoord = new HexCoordinates(
+                spawnCoord.q + direction.q,
+                spawnCoord.r + direction.r
+            );
+            
+            if (hexGrid.ContainsKey(adjacentCoord))
+            {
+                var adjacentHex = hexGrid[adjacentCoord];
+                
+                // If adjacent hex is a pathway, add arrow direction
+                if (adjacentHex.type == HexType.Pathway)
+                {
+                    Vector3 adjacentPos = HexToWorldPosition(adjacentCoord);
+                    Vector3 attackDirection = (adjacentPos - spawnCenter).normalized;
+                    attackDirections.Add(attackDirection);
+                }
+            }
+        }
+        
+        // Always add arrow towards center hub
+        Vector3 centerDirection = (HexToWorldPosition(HexCoordinates.Zero) - spawnCenter).normalized;
+        attackDirections.Add(centerDirection);
+        
+        // Draw attack arrows
+        Gizmos.color = pathwayConnectionColor;
+        float arrowLength = hexSize * 0.8f;
+        float arrowHeight = hexSize * 0.3f;
+        
+        for (int i = 0; i < attackDirections.Count; i++)
+        {
+            Vector3 direction = attackDirections[i];
+            Vector3 startPos = spawnCenter + Vector3.up * arrowHeight;
+            
+            // Use different colors for different arrow types
+            if (i == attackDirections.Count - 1) // Last arrow (to center)
+            {
+                Gizmos.color = Color.red; // Red for direct path to center
+            }
+            else
+            {
+                Gizmos.color = pathwayConnectionColor; // Yellow for pathway connections
+            }
+            
+            // Draw thicker, more prominent arrows
+            DrawAttackArrow(startPos, direction, arrowLength, hexSize * 0.15f);
+        }
+    }
+    
+    private void DrawAttackArrow(Vector3 startPos, Vector3 direction, float length, float thickness)
+    {
+        Vector3 endPos = startPos + direction * length;
+        
+        // Draw main arrow shaft with thickness
+        DrawThickLine(startPos, endPos, thickness);
+        
+        // Draw larger arrowhead
+        Vector3 right = Vector3.Cross(direction, Vector3.up) * length * 0.3f;
+        Vector3 up = Vector3.up * length * 0.2f;
+        
+        Vector3 arrowLeft = endPos - direction * length * 0.4f - right + up;
+        Vector3 arrowRight = endPos - direction * length * 0.4f + right + up;
+        Vector3 arrowDown = endPos - direction * length * 0.4f - up;
+        
+        // Draw 3D arrowhead
+        DrawThickLine(endPos, arrowLeft, thickness * 0.8f);
+        DrawThickLine(endPos, arrowRight, thickness * 0.8f);
+        DrawThickLine(endPos, arrowDown, thickness * 0.8f);
+        DrawThickLine(arrowLeft, arrowRight, thickness * 0.6f);
+        DrawThickLine(arrowLeft, arrowDown, thickness * 0.6f);
+        DrawThickLine(arrowRight, arrowDown, thickness * 0.6f);
     }
     
     #endregion
