@@ -180,6 +180,11 @@ public class HexEnvironmentManager : MonoBehaviour
     private int generationSeed = 0;
     
     [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Center Hub Settings")]
+    [SerializeField, Range(1, 2), Tooltip("Size of center hub (1 = single hex, 2 = center + 6 surrounding = 7 total)")]
+    private int centerHubSize = 2;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
     [TitleGroup("TD/Overall Lane Settings")]
     [SerializeField, Tooltip("Auto-randomize lane settings when seed changes")]
     private bool autoRandomizeLanes = true;
@@ -265,21 +270,6 @@ public class HexEnvironmentManager : MonoBehaviour
     [TitleGroup("TD/Validation Settings")]
     [SerializeField, Tooltip("Automatically validate environment during generation to prevent clumping and ensure lane completion")]
     private bool enableValidation = true;
-    
-    [TabGroup("TD", "🏰 Tower Defense")]
-    [TitleGroup("TD/Validation Settings")]
-    [SerializeField, Tooltip("Try to repair issues before full regeneration")]
-    private bool enableTargetedRepairs = true;
-    
-    [TabGroup("TD", "🏰 Tower Defense")]
-    [TitleGroup("TD/Validation Settings")]
-    [SerializeField, Range(50, 100), Tooltip("Minimum percentage of clumping issues that must be fixed for repair to be considered successful")]
-    private int repairSuccessThreshold = 80;
-    
-    [TabGroup("TD", "🏰 Tower Defense")]
-    [TitleGroup("TD/Validation Settings")]
-    [SerializeField, Tooltip("Check for clumping during generation and avoid creating problematic patterns")]
-    private bool preventClumpingDuringGeneration = true;
     
     [TabGroup("TD", "🏰 Tower Defense")]
     [TitleGroup("TD/Generation Actions")]
@@ -905,6 +895,9 @@ public class HexEnvironmentManager : MonoBehaviour
     
     private void GenerateAllHexCoordinates()
     {
+        // Get center hub coordinates (center + 6 surrounding hexes = 7 total)
+        List<HexCoordinates> centerHubCoords = GetCenterHubCoordinates();
+        
         // Generate all hex coordinates in rings from center outwards
         for (int ring = 0; ring <= gridRadius; ring++)
         {
@@ -912,14 +905,90 @@ public class HexEnvironmentManager : MonoBehaviour
             
             foreach (var coord in ringCoords)
             {
-                // Start as environment, will be changed by lane generation
-                HexType type = ring == 0 ? HexType.CenterHub : HexType.Environment;
+                // Check if this coordinate is part of the center hub
+                HexType type = centerHubCoords.Contains(coord) ? HexType.CenterHub : HexType.Environment;
                 HexData hexData = new HexData(coord, type);
                 
                 hexGrid[coord] = hexData;
                 generatedCoordinates.Add(coord);
             }
         }
+    }
+    
+    private List<HexCoordinates> GetCenterHubCoordinates()
+    {
+        List<HexCoordinates> centerHubCoords = new List<HexCoordinates>();
+        
+        // Always add the center hex
+        centerHubCoords.Add(HexCoordinates.Zero);
+        
+        // Add surrounding hexes based on size setting
+        if (centerHubSize >= 2)
+        {
+            // Add the 6 surrounding hexes (ring 1 around center)
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                centerHubCoords.Add(new HexCoordinates(direction.q, direction.r));
+            }
+        }
+        
+        return centerHubCoords;
+    }
+    
+    private bool IsPartOfCenterHub(HexCoordinates coord)
+    {
+        // Center hex is always part of the hub
+        if (coord.Equals(HexCoordinates.Zero))
+            return true;
+            
+        // Check surrounding hexes based on size setting
+        if (centerHubSize >= 2)
+        {
+            // Check if it's one of the 6 directions from center
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                if (coord.q == direction.q && coord.r == direction.r)
+                    return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    private float GetDistanceToNearestCenterHub(HexCoordinates hex)
+    {
+        List<HexCoordinates> centerHubCoords = GetCenterHubCoordinates();
+        float minDistance = float.MaxValue;
+        
+        foreach (var centerHex in centerHubCoords)
+        {
+            float distance = HexDistance(hex, centerHex);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+            }
+        }
+        
+        return minDistance;
+    }
+    
+    private HexCoordinates GetNearestCenterHubHex(HexCoordinates hex)
+    {
+        List<HexCoordinates> centerHubCoords = GetCenterHubCoordinates();
+        HexCoordinates nearest = HexCoordinates.Zero;
+        float minDistance = float.MaxValue;
+        
+        foreach (var centerHex in centerHubCoords)
+        {
+            float distance = HexDistance(hex, centerHex);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearest = centerHex;
+            }
+        }
+        
+        return nearest;
     }
     
     private void GenerateLanes()
@@ -1042,8 +1111,8 @@ public class HexEnvironmentManager : MonoBehaviour
             {
                 var lane = generatedLanes[laneIndex];
                 
-                // Skip if lane already reached center
-                if (lane.Count > 0 && lane[lane.Count - 1] == HexCoordinates.Zero)
+                // Skip if lane already reached center hub
+                if (lane.Count > 0 && IsPartOfCenterHub(lane[lane.Count - 1]))
                     continue;
                 
                 // Get current position (last hex in lane)
@@ -1052,7 +1121,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 // Find next hex for this lane
                 HexCoordinates nextHex = FindNextHexForLane(currentPos, laneIndex, occupiedHexes, newOccupiedThisWave);
                 
-                if (nextHex != currentPos && nextHex != HexCoordinates.Zero)
+                if (nextHex != currentPos && !IsPartOfCenterHub(nextHex))
                 {
                     // Check if we can place this hex (maintain spacing from other lanes)
                     if (CanPlaceHexWithSpacing(nextHex, newOccupiedThisWave, laneIndex))
@@ -1062,11 +1131,11 @@ public class HexEnvironmentManager : MonoBehaviour
                         anyLaneProgressed = true;
                     }
                 }
-                else if (nextHex == HexCoordinates.Zero)
+                else if (IsPartOfCenterHub(nextHex))
                 {
-                    // Reached center
-                    lane.Add(HexCoordinates.Zero);
-                    newOccupiedThisWave.Add(HexCoordinates.Zero);
+                    // Reached center hub
+                    lane.Add(nextHex);
+                    newOccupiedThisWave.Add(nextHex);
                     anyLaneProgressed = true;
                 }
             }
@@ -1077,11 +1146,11 @@ public class HexEnvironmentManager : MonoBehaviour
                 occupiedHexes.Add(hex);
             }
             
-            // Check if all lanes have reached center
+            // Check if all lanes have reached center hub
             bool allLanesComplete = true;
             foreach (var lane in generatedLanes)
             {
-                if (lane.Count == 0 || lane[lane.Count - 1] != HexCoordinates.Zero)
+                if (lane.Count == 0 || !IsPartOfCenterHub(lane[lane.Count - 1]))
                 {
                     allLanesComplete = false;
                     break;
@@ -1109,12 +1178,10 @@ public class HexEnvironmentManager : MonoBehaviour
         GenerateLanes();
         ApplyLanesToHexGrid();
         
-        // Try targeted repairs before full regeneration (if enabled)
-        bool repairSuccessful = enableTargetedRepairs ? ValidateAndRepairEnvironment() : ValidateEnvironment();
-        
-        if (!repairSuccessful)
+        // Try targeted repairs before full regeneration
+        if (!ValidateAndRepairEnvironment())
         {
-            // If repair fails or is disabled, fall back to regeneration attempts
+            // If repair fails, fall back to regeneration attempts
             for (int attempt = 2; attempt <= maxValidationAttempts; attempt++)
             {
                 Debug.Log($"[HexEnvironmentManager] Lane generation attempt {attempt}/{maxValidationAttempts}");
@@ -1125,8 +1192,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 GenerateLanes();
                 ApplyLanesToHexGrid();
                 
-                bool currentValid = enableTargetedRepairs ? ValidateAndRepairEnvironment() : ValidateEnvironment();
-                if (currentValid)
+                if (ValidateAndRepairEnvironment())
                 {
                     Debug.Log($"[HexEnvironmentManager] Lane generation successful on attempt {attempt}");
                     return;
@@ -1137,8 +1203,7 @@ public class HexEnvironmentManager : MonoBehaviour
         }
         else
         {
-            string method = enableTargetedRepairs ? "with targeted repairs" : "on first attempt";
-            Debug.Log($"[HexEnvironmentManager] Lane generation successful {method}");
+            Debug.Log("[HexEnvironmentManager] Lane generation successful with targeted repairs");
         }
     }
     
@@ -1188,9 +1253,23 @@ public class HexEnvironmentManager : MonoBehaviour
         {
             var lane = generatedLanes[laneIndex];
             
-            if (lane.Count == 0 || !lane.Contains(HexCoordinates.Zero))
+            // Check if lane reaches any center hub hex
+            bool reachesCenterHub = false;
+            if (lane.Count > 0)
             {
-                Debug.Log($"[HexEnvironmentManager] Repairing lane {laneIndex} - extending to center");
+                foreach (var centerHex in GetCenterHubCoordinates())
+                {
+                    if (lane.Contains(centerHex))
+                    {
+                        reachesCenterHub = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (lane.Count == 0 || !reachesCenterHub)
+            {
+                Debug.Log($"[HexEnvironmentManager] Repairing lane {laneIndex} - extending to center hub");
                 
                 if (lane.Count == 0)
                 {
@@ -1232,9 +1311,8 @@ public class HexEnvironmentManager : MonoBehaviour
         
         Debug.Log($"[HexEnvironmentManager] Repaired {repairedCount}/{clumpedHexes.Count} clumped hexes");
         
-        // Return true if we repaired enough clumping (configurable threshold)
-        float repairPercentage = clumpedHexes.Count > 0 ? (repairedCount / (float)clumpedHexes.Count) * 100f : 100f;
-        return repairPercentage >= repairSuccessThreshold;
+        // Return true if we repaired most of the clumping (80% threshold)
+        return repairedCount >= (clumpedHexes.Count * 0.8f);
     }
     
     private List<HexCoordinates> FindClumpedPathwayHexes()
@@ -1305,7 +1383,7 @@ public class HexEnvironmentManager : MonoBehaviour
     private bool CanSafelyConvertToEnvironment(HexCoordinates hex)
     {
         // Check if removing this hex would disconnect any lanes
-        if (hex == HexCoordinates.Zero) return false; // Never remove center
+        if (IsPartOfCenterHub(hex)) return false; // Never remove center hub hexes
         
         // Find which lanes use this hex
         var affectedLanes = new List<int>();
@@ -1356,18 +1434,18 @@ public class HexEnvironmentManager : MonoBehaviour
     
     private List<HexCoordinates> FindOptimalPathToCenter(HexCoordinates start, int laneIndex)
     {
-        // Simple A* pathfinding to center, avoiding existing pathways when possible
+        // Simple A* pathfinding to center hub, avoiding existing pathways when possible
         var openSet = new List<HexCoordinates> { start };
         var cameFrom = new Dictionary<HexCoordinates, HexCoordinates>();
         var gScore = new Dictionary<HexCoordinates, float> { [start] = 0 };
-        var fScore = new Dictionary<HexCoordinates, float> { [start] = HexDistance(start, HexCoordinates.Zero) };
+        var fScore = new Dictionary<HexCoordinates, float> { [start] = GetDistanceToNearestCenterHub(start) };
         
         while (openSet.Count > 0)
         {
             // Find hex with lowest fScore
             HexCoordinates current = openSet.OrderBy(h => fScore.GetValueOrDefault(h, float.MaxValue)).First();
             
-            if (current == HexCoordinates.Zero)
+            if (IsPartOfCenterHub(current))
             {
                 // Reconstruct path
                 var path = new List<HexCoordinates>();
@@ -1395,7 +1473,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 float tentativeGScore = gScore.GetValueOrDefault(current, float.MaxValue) + 1;
                 
                 // Add penalty for using existing pathways (but allow it)
-                if (hexGrid[neighbor].type == HexType.Pathway && neighbor != HexCoordinates.Zero)
+                if (hexGrid[neighbor].type == HexType.Pathway && !IsPartOfCenterHub(neighbor))
                 {
                     tentativeGScore += 0.5f; // Slight penalty
                 }
@@ -1404,7 +1482,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 {
                     cameFrom[neighbor] = current;
                     gScore[neighbor] = tentativeGScore;
-                    fScore[neighbor] = tentativeGScore + HexDistance(neighbor, HexCoordinates.Zero);
+                    fScore[neighbor] = tentativeGScore + GetDistanceToNearestCenterHub(neighbor);
                     
                     if (!openSet.Contains(neighbor))
                     {
@@ -1414,8 +1492,9 @@ public class HexEnvironmentManager : MonoBehaviour
             }
         }
         
-        // Fallback: direct line to center
-        return new List<HexCoordinates> { HexCoordinates.Zero };
+        // Fallback: direct line to nearest center hub hex
+        HexCoordinates nearestCenterHub = GetNearestCenterHubHex(start);
+        return new List<HexCoordinates> { nearestCenterHub };
     }
     
     private void ClearLaneData()
@@ -1423,12 +1502,12 @@ public class HexEnvironmentManager : MonoBehaviour
         // Clear lane data for regeneration
         generatedLanes.Clear();
         
-        // Reset hex types (except center)
+        // Reset hex types (except center hub)
         foreach (var kvp in hexGrid)
         {
-            if (kvp.Key == HexCoordinates.Zero)
+            if (IsPartOfCenterHub(kvp.Key))
             {
-                kvp.Value.type = HexType.CenterHub; // Keep center as hub
+                kvp.Value.type = HexType.CenterHub; // Keep center hub as hub
             }
             else
             {
@@ -1459,12 +1538,26 @@ public class HexEnvironmentManager : MonoBehaviour
     
     private bool ValidateAllLanesReachCenter()
     {
+        List<HexCoordinates> centerHubCoords = GetCenterHubCoordinates();
+        
         foreach (var lane in generatedLanes)
         {
-            if (lane.Count == 0 || !lane.Contains(HexCoordinates.Zero))
-            {
+            if (lane.Count == 0)
                 return false;
+                
+            // Check if lane contains any center hub hex
+            bool reachesCenterHub = false;
+            foreach (var centerHex in centerHubCoords)
+            {
+                if (lane.Contains(centerHex))
+                {
+                    reachesCenterHub = true;
+                    break;
+                }
             }
+            
+            if (!reachesCenterHub)
+                return false;
         }
         return true;
     }
@@ -1536,17 +1629,17 @@ public class HexEnvironmentManager : MonoBehaviour
     
     private HexCoordinates FindNextHexForLane(HexCoordinates currentPos, int laneIndex, HashSet<HexCoordinates> globalOccupied, List<HexCoordinates> waveOccupied)
     {
-        // Check if center is adjacent - if so, go there immediately
+        // Check if any center hub hex is adjacent - if so, go there immediately
         foreach (var direction in HEX_DIRECTIONS)
         {
             HexCoordinates adjacent = new HexCoordinates(currentPos.q + direction.q, currentPos.r + direction.r);
-            if (adjacent == HexCoordinates.Zero)
+            if (IsPartOfCenterHub(adjacent))
             {
-                return HexCoordinates.Zero;
+                return adjacent;
             }
         }
         
-        // Find best next hex toward center
+        // Find best next hex toward center hub
         List<(HexCoordinates hex, float score)> candidates = new List<(HexCoordinates, float)>();
         
         foreach (var direction in HEX_DIRECTIONS)
@@ -1590,61 +1683,24 @@ public class HexEnvironmentManager : MonoBehaviour
     
     private float CalculateWaveHexScore(HexCoordinates hex, HexCoordinates from, int laneIndex)
     {
-        // Distance to center (40% weight) - closer is better
-        float distanceToCenter = HexDistance(hex, HexCoordinates.Zero);
+        // Distance to nearest center hub hex (50% weight) - closer is better
+        float distanceToCenter = GetDistanceToNearestCenterHub(hex);
         float maxDistance = gridRadius;
-        float distanceScore = (1f - (distanceToCenter / maxDistance)) * 0.4f;
+        float distanceScore = (1f - (distanceToCenter / maxDistance)) * 0.5f;
         
-        // Direction toward center (25% weight)
+        // Direction toward nearest center hub hex (30% weight)
         Vector3 hexWorldPos = HexToWorldPosition(hex);
         Vector3 fromWorldPos = HexToWorldPosition(from);
-        Vector3 centerWorldPos = HexToWorldPosition(HexCoordinates.Zero);
+        HexCoordinates nearestCenterHub = GetNearestCenterHubHex(hex);
+        Vector3 centerWorldPos = HexToWorldPosition(nearestCenterHub);
         Vector3 moveDirection = (hexWorldPos - fromWorldPos).normalized;
         Vector3 toCenterDirection = (centerWorldPos - fromWorldPos).normalized;
-        float directionScore = Vector3.Dot(moveDirection, toCenterDirection) * 0.25f;
+        float directionScore = Vector3.Dot(moveDirection, toCenterDirection) * 0.3f;
         
         // Defender accessibility (20% weight)
         float accessibilityScore = HasAdjacentDefenderSpots(hex) ? 0.2f : 0f;
         
-        // Anti-clumping score (15% weight) - prevent creating isolated pathway clusters
-        float antiClumpingScore = 0f;
-        if (preventClumpingDuringGeneration && enableValidation)
-        {
-            antiClumpingScore = CalculateAntiClumpingScore(hex) * 0.15f;
-        }
-        
-        return distanceScore + directionScore + accessibilityScore + antiClumpingScore;
-    }
-    
-    private float CalculateAntiClumpingScore(HexCoordinates hex)
-    {
-        int adjacentEnvironmentCount = 0;
-        int adjacentPathwayCount = 0;
-        
-        foreach (var direction in HEX_DIRECTIONS)
-        {
-            HexCoordinates adjacent = new HexCoordinates(hex.q + direction.q, hex.r + direction.r);
-            
-            if (hexGrid.ContainsKey(adjacent))
-            {
-                var adjacentType = hexGrid[adjacent].type;
-                if (adjacentType == HexType.Environment)
-                {
-                    adjacentEnvironmentCount++;
-                }
-                else if (adjacentType == HexType.Pathway)
-                {
-                    adjacentPathwayCount++;
-                }
-            }
-        }
-        
-        // Prefer hexes that maintain defender access (have adjacent environment hexes)
-        // Penalize hexes that would create large pathway clusters
-        float environmentScore = adjacentEnvironmentCount > 0 ? 1f : 0f;
-        float clusterPenalty = adjacentPathwayCount > 3 ? -0.5f : 0f; // Penalize if surrounded by pathways
-        
-        return environmentScore + clusterPenalty;
+        return distanceScore + directionScore + accessibilityScore;
     }
     
     private bool CanPlaceHexWithSpacing(HexCoordinates hex, List<HexCoordinates> otherNewHexes, int laneIndex)
@@ -1668,14 +1724,29 @@ public class HexEnvironmentManager : MonoBehaviour
         {
             var lane = generatedLanes[laneIndex];
             
-            // If lane doesn't reach center, force a connection
-            if (lane.Count == 0 || lane[lane.Count - 1] != HexCoordinates.Zero)
+            // Check if lane reaches any center hub hex
+            bool reachesCenterHub = false;
+            if (lane.Count > 0)
             {
-                // Add center directly if we're close enough
-                HexCoordinates lastHex = lane[lane.Count - 1];
-                if (HexDistance(lastHex, HexCoordinates.Zero) <= 2f)
+                foreach (var centerHex in GetCenterHubCoordinates())
                 {
-                    lane.Add(HexCoordinates.Zero);
+                    if (lane.Contains(centerHex))
+                    {
+                        reachesCenterHub = true;
+                        break;
+                    }
+                }
+            }
+            
+            // If lane doesn't reach center hub, force a connection
+            if (lane.Count == 0 || !reachesCenterHub)
+            {
+                // Find nearest center hub hex and add it directly if we're close enough
+                HexCoordinates lastHex = lane[lane.Count - 1];
+                HexCoordinates nearestCenterHub = GetNearestCenterHubHex(lastHex);
+                if (GetDistanceToNearestCenterHub(lastHex) <= 2f)
+                {
+                    lane.Add(nearestCenterHub);
                 }
                 else
                 {
