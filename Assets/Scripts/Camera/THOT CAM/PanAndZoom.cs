@@ -289,10 +289,17 @@ public class PanAndZoom : MonoBehaviour
         }
         if (Input.GetMouseButton(1) && isOrbiting)
         {
-            float deltaX = Input.mousePosition.x - orbitStartScreen.x;
-            orbitRotation += deltaX * orbitSensitivity;
-            orbitStartScreen = Input.mousePosition;
-            ApplyOrbitRotation();
+            Vector3 currentMousePos = Input.mousePosition;
+            float deltaX = currentMousePos.x - orbitStartScreen.x;
+            
+            // Only apply rotation if we're actually dragging (not on the first frame)
+            if (Vector3.Distance(currentMousePos, orbitStartScreen) > 0.1f)
+            {
+                orbitRotation += deltaX * orbitSensitivity;
+                ApplyOrbitRotation();
+            }
+            
+            orbitStartScreen = currentMousePos; // Update for next frame
         }
         if (Input.GetMouseButtonUp(1))
         {

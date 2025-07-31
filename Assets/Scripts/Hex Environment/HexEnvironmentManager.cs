@@ -1814,7 +1814,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 }
             }
             
-            Debug.Log($"[HexEnvironmentManager] Lane {laneIndex} generated with {lane.Count} hexes, reaches center: {reachesCenter}");
+           // Debug.Log($"[HexEnvironmentManager] Lane {laneIndex} generated with {lane.Count} hexes, reaches center: {reachesCenter}");
         }
     }
     
@@ -1913,11 +1913,11 @@ public class HexEnvironmentManager : MonoBehaviour
                 hexGrid[edgeSpawnCoord] = edgeSpawnData;
                 laneSpawnPoints.Add(edgeSpawnCoord);
                 
-                Debug.Log($"[HexEnvironmentManager] Created edge spawn at {edgeSpawnCoord} for lane {laneIndex}, connected to first hex {firstHex}");
+                //Debug.Log($"[HexEnvironmentManager] Created edge spawn at {edgeSpawnCoord} for lane {laneIndex}, connected to first hex {firstHex}");
             }
         }
         
-        Debug.Log($"[HexEnvironmentManager] Generated {laneSpawnPoints.Count} edge spawn points");
+        //Debug.Log($"[HexEnvironmentManager] Generated {laneSpawnPoints.Count} edge spawn points");
     }
     
     private HexCoordinates FindBestEdgeSpawnPosition(HexCoordinates firstHex)
