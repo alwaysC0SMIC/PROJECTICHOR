@@ -18,6 +18,18 @@ public struct OnGameStateLoaded : IEvent
     public SaveData loadedData;
 }
 
+#region CAMERA EVENTS
+
+public struct ToggleGameplayCamEvent : IEvent
+{
+    public bool allowCam;
+}
+
+public struct ResetCameraEvent : IEvent
+{ }
+
+#endregion
+
 #region UI EVENTS
 
 public struct UpdateUIStyleEvent : IEvent { }

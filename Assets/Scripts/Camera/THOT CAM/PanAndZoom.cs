@@ -1,0 +1,278 @@
+using System.Collections;
+using System.Collections.Generic;
+using NovaSamples.UIControls;
+using Unity.Cinemachine;
+using UnityEngine;
+using Sirenix.OdinInspector;
+using DG.Tweening;
+
+//REF: https://www.youtube.com/watch?v=K_aAnBn5khA&ab_channel=PressStart
+
+public class PanAndZoom : MonoBehaviour
+{
+    // CAMERA REFERENCE FOR CINEMACHINE
+    [BoxGroup("Camera")]
+    [LabelText("Virtual Camera")]
+    [SerializeField] public CinemachineCamera virtCam;
+
+    // MAIN CAMERA REFERENCE
+    [BoxGroup("Camera")]
+    [LabelText("Main Camera")]
+    [SerializeField] public Camera thisCamera;
+
+    // TOUCH/DRAG START POSITION
+    [BoxGroup("Input")]
+    [LabelText("Touch Start")]
+    [ShowInInspector] public Vector3 touchStart;
+    [BoxGroup("Input")]
+    [LabelText("Touch Start Screen")]
+    [ShowInInspector] public Vector3 touchStartScreen;
+    [BoxGroup("Input")]
+    [LabelText("Is Dragging")]
+    [ShowInInspector] public bool isDragging = false;
+    [BoxGroup("Input")]
+    [LabelText("Drag Threshold")]
+    [SerializeField] public float dragThreshold = 5f; // pixels
+
+    // ZOOM LIMITS
+    [BoxGroup("Zoom")]
+    [LabelText("Zoom Out Min")]
+    [SerializeField] public float zoomOutMin = 1F;
+    [BoxGroup("Zoom")]
+    [LabelText("Zoom Out Max")]
+    [SerializeField] public float zoomOutMax = 6F;
+
+    // PANNING LIMITS
+    [BoxGroup("Panning")]
+    [LabelText("Pan Radius")]
+    [SerializeField] public float panRadius = 20f; // Set this in the Inspector
+    [BoxGroup("Panning")]
+    [LabelText("Pan Center")]
+    [ShowInInspector] public Vector3 panCenter;
+    [BoxGroup("Panning")]
+    [LabelText("Pan Offset")]
+    [SerializeField] public Vector3 panOffset = new Vector3(0, -2, 0); // Default offset (slightly lower)
+
+    // INPUT CONTROL
+    [BoxGroup("Input")]
+    [LabelText("Allow Input")]
+    [SerializeField] public bool allowInput = true;
+
+    // ORBIT VARIABLES
+    [BoxGroup("Orbit")]
+    [LabelText("Orbit Rotation")]
+    [ShowInInspector] public float orbitRotation = 0f;
+    [BoxGroup("Orbit")]
+    [LabelText("Orbit Rotation Default")]
+    [SerializeField] public float orbitRotationDefault = 0f;
+    [BoxGroup("Orbit")]
+    [LabelText("Orbit Sensitivity")]
+    [SerializeField] public float orbitSensitivity = 0.3f; // Adjust as needed
+    [BoxGroup("Orbit")]
+    [LabelText("Is Orbiting")]
+    [ShowInInspector] public bool isOrbiting = false;
+    [BoxGroup("Orbit")]
+    [LabelText("Orbit Start Screen")]
+    [ShowInInspector] public Vector3 orbitStartScreen;
+
+    // RESET VARIABLES
+    [BoxGroup("Reset")]
+    [LabelText("Reset Duration")]
+    [SerializeField] public float resetDuration = 0.5f;
+
+#if UNITY_EDITOR
+    [BoxGroup("Debug Controls"), GUIColor(0.2f, 0.7f, 1f)]
+    [Button(ButtonSizes.Large, Name = "Reset Camera", Icon = SdfIconType.Camera)]
+    private void Debug_ResetCamera()
+    {
+        ResetCam();
+        Debug.Log("Camera reset via debug button.");
+    }
+
+    [BoxGroup("Debug Controls"), GUIColor(0.7f, 1f, 0.2f)]
+    [Button(ButtonSizes.Large, Name = "Set Pan Center", Icon = SdfIconType.GeoAlt)]
+    private void Debug_SetPanCenter()
+    {
+        if (thisCamera != null)
+        {
+            panCenter = thisCamera.transform.position + panOffset;
+            Debug.Log($"Pan center set to: {panCenter} (with offset: {panOffset})");
+        }
+    }
+
+    [BoxGroup("Debug Controls"), GUIColor(1f, 0.5f, 0.2f)]
+    [Button(ButtonSizes.Large, Name = "Toggle Input", Icon = SdfIconType.ToggleOn)]
+    private void Debug_ToggleInput()
+    {
+        allowInput = !allowInput;
+        Debug.Log($"Input {(allowInput ? "enabled" : "disabled")} via debug button.");
+    }
+
+    [BoxGroup("Debug Controls"), GUIColor(1f, 0.2f, 0.8f)]
+    [Button(ButtonSizes.Large, Name = "Reset Orbit", Icon = SdfIconType.ArrowClockwise)]
+    private void Debug_ResetOrbit()
+    {
+        orbitRotation = orbitRotationDefault;
+        ApplyOrbitRotation();
+        Debug.Log("Orbit rotation reset to default.");
+    }
+#endif
+
+    private void Start()
+    {
+        // ALLOW CAMERA TO BE SET IN INSPECTOR OR AUTOMATICALLY
+        if (thisCamera == null)
+            thisCamera = GetComponent<Camera>();
+        if (thisCamera == null)
+            thisCamera = Camera.main;
+        panCenter = thisCamera.transform.position + panOffset;
+    }
+
+    void Update()
+    {
+        if (allowInput)
+        {
+            //INTERACTION WITH UI
+            HandlePanInput();
+            HandleOrbitInput();
+            Zoom(Input.GetAxis("Mouse ScrollWheel"));
+        }
+    }
+
+    // HANDLE PANNING INPUT (LEFT MOUSE OR SINGLE TOUCH)
+    private void HandlePanInput()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            touchStart = thisCamera.ScreenToWorldPoint(Input.mousePosition);
+            touchStartScreen = Input.mousePosition;
+            isDragging = false;
+        }
+
+        if (Input.GetMouseButton(0))
+        {
+            if (!isDragging && (Input.mousePosition - touchStartScreen).magnitude > dragThreshold)
+            {
+                isDragging = true;
+            }
+
+            if (isDragging)
+            {
+                Vector3 direction = touchStart - thisCamera.ScreenToWorldPoint(Input.mousePosition);
+                Vector3 newPosition = thisCamera.transform.position + direction;
+
+                // Clamp to pan radius
+                Vector3 offset = newPosition - panCenter;
+                if (offset.magnitude > panRadius)
+                {
+                    offset = offset.normalized * panRadius;
+                    newPosition = panCenter + offset;
+                }
+
+                thisCamera.transform.position = newPosition;
+            }
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            isDragging = false;
+        }
+    }
+
+    // APPLY ORBIT ROTATION TO CAMERA
+    private void ApplyOrbitRotation()
+    {
+        // CINEMACHINE ORBIT ROTATION
+        if (virtCam != null)
+        {
+            // Anchor orbit to a persistent value
+            virtCam.transform.localRotation = Quaternion.Euler(virtCam.transform.localRotation.eulerAngles.x, orbitRotation, virtCam.transform.localRotation.eulerAngles.z);
+        }
+        // Optionally rotate the Unity camera if needed
+        if (thisCamera != null)
+        {
+            thisCamera.transform.localRotation = Quaternion.Euler(thisCamera.transform.localRotation.eulerAngles.x, orbitRotation, thisCamera.transform.localRotation.eulerAngles.z);
+        }
+    }
+
+    // HANDLE ORBIT INPUT (RIGHT MOUSE OR TWO-FINGER TOUCH)
+    private void HandleOrbitInput()
+    {
+        // PC/Mac/WebGL: Right Mouse Drag
+        if (Input.GetMouseButtonDown(1))
+        {
+            isOrbiting = true;
+            orbitStartScreen = Input.mousePosition;
+        }
+        if (Input.GetMouseButton(1) && isOrbiting)
+        {
+            float deltaX = Input.mousePosition.x - orbitStartScreen.x;
+            orbitRotation += deltaX * orbitSensitivity;
+            orbitStartScreen = Input.mousePosition;
+            ApplyOrbitRotation();
+        }
+        if (Input.GetMouseButtonUp(1))
+        {
+            isOrbiting = false;
+        }
+
+        // Mobile: Two-Finger Drag
+        if (Input.touchCount == 2)
+        {
+            Touch t0 = Input.GetTouch(0);
+            Touch t1 = Input.GetTouch(1);
+            // Use average movement for orbit
+            if (t0.phase == TouchPhase.Moved || t1.phase == TouchPhase.Moved)
+            {
+                Vector2 avgDelta = (t0.deltaPosition + t1.deltaPosition) / 2f;
+                orbitRotation += avgDelta.x * orbitSensitivity;
+                ApplyOrbitRotation();
+            }
+        }
+    }
+
+    void Zoom(float increment)
+    {
+        Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize - increment, zoomOutMin, zoomOutMax);
+        virtCam.Lens.OrthographicSize = Camera.main.orthographicSize;
+    }
+
+    // Returns the shortest angle for smooth rotation
+    private float ShortestAngleLerp(float start, float end, float t)
+    {
+        float shortest = Mathf.DeltaAngle(start, end);
+        return start + shortest * t;
+    }
+
+    public void ResetCam()
+    {
+        float targetOrthoSize = 2F;
+        Vector3 targetPosition = panCenter;
+        float startOrbit = orbitRotation;
+        float targetOrbit = orbitRotationDefault;
+
+        // DOTween for camera position
+        if (thisCamera != null)
+        {
+            thisCamera.transform.DOMove(targetPosition, resetDuration);
+            DOTween.To(() => thisCamera.orthographicSize, x => thisCamera.orthographicSize = x, targetOrthoSize, resetDuration);
+        }
+        // DOTween for Cinemachine lens
+        if (virtCam != null)
+        {
+            DOTween.To(() => virtCam.Lens.OrthographicSize, x => virtCam.Lens.OrthographicSize = x, targetOrthoSize, resetDuration);
+            DOTween.To(() => 0f, x => {
+                orbitRotation = ShortestAngleLerp(startOrbit, targetOrbit, x);
+                ApplyOrbitRotation();
+            }, 1f, resetDuration);
+        }
+        else
+        {
+            DOTween.To(() => 0f, x => {
+                orbitRotation = ShortestAngleLerp(startOrbit, targetOrbit, x);
+                ApplyOrbitRotation();
+            }, 1f, resetDuration);
+        }
+    }
+
+}
