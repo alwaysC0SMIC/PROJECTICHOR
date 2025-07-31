@@ -56,6 +56,10 @@ public abstract class BounceInteractable : MonoBehaviour
     public Interactable interactable { get; private set; }
 
     [TitleGroup("Interaction Setup")]
+    [InfoBox("⚠️ IMPORTANT: The TransformSpringComponent should target the CONTAINER of the button, not the button itself. " +
+             "If the spring is on the button GameObject directly, animations may not work as intended. " +
+             "Consider placing the spring on a parent container GameObject.",
+             InfoMessageType = InfoMessageType.Warning, VisibleIf = "@interactionAnimation == InteractionAnimationType.UseSpring")]
     [ShowIf("@interactionAnimation == InteractionAnimationType.UseSpring")]
     [SerializeField, Tooltip("TransformSpringComponent used when Interaction Animation = Use Spring.\n" +
                              "Automatically fetched on this GameObject if not assigned.")]
@@ -77,11 +81,12 @@ public abstract class BounceInteractable : MonoBehaviour
                              "Tune spring settings on the TransformSpringComponent itself for feel.")]
     public float scaleSpringStrength = 1.1f;
 
-    // If you re-enable rotation, add a tooltip like below:
-    // [TitleGroup("Spring Settings"), ShowIf("@interactionAnimation == InteractionAnimationType.UseSpring")]
-    // [SerializeField, Tooltip("Z-rotation target (degrees) while hovering. Negative values tilt clockwise.\n" +
-    //                          "Set back to 0 on exit to return to identity.")]
-    // public float rotationSpringStrength = -3f;
+    [TitleGroup("Spring Settings"), ShowIf("@interactionAnimation == InteractionAnimationType.UseSpring")]
+    [SerializeField, Tooltip("Z-rotation velocity (degrees/sec) applied to the spring when clicked.\n" +
+                             "Positive values spin counter-clockwise, negative values spin clockwise.\n" +
+                             "This creates a satisfying spin effect on click.")]
+    [Range(-360f, 360f)]
+    public float clickRotationVelocity = 180f;
 
     #endregion
 
@@ -315,13 +320,23 @@ public abstract class BounceInteractable : MonoBehaviour
     #endregion
 
     [Tooltip("Override in derived classes to define click behavior for this interactable.\n" +
-             "Base implementation returns the spring to scale 1.")]
+             "Base implementation returns the spring to scale 1 and applies rotation velocity.")]
     public virtual void OnClick()
     {
         if (springComponent != null)
         {
             springComponent.SetTargetScale(1f);
-            // springComponent.SetVelocityRotation(new Vector3(0f, 0f, rotationSpringStrength));
+            
+            // Apply rotation velocity on click for satisfying spin effect
+            if (interactionAnimation == InteractionAnimationType.UseSpring && clickRotationVelocity != 0f)
+            {
+                Debug.Log($"Applying rotation velocity: {clickRotationVelocity} to {springComponent.name}");
+                springComponent.SetVelocityRotation(new Vector3(0f, 0f, clickRotationVelocity));
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"SpringComponent is null on {name} - rotation animation cannot be applied");
         }
     }
     //TEST

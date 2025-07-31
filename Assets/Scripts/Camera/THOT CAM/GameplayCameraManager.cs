@@ -119,7 +119,7 @@ public class GameplayCameraManager : MonoBehaviour
     private System.Collections.IEnumerator DelayedInitialState()
     {
         yield return null; // Wait one frame
-        Debug.Log("[GameplayCameraManager] Raising initial gameplay state event");
+        //Debug.Log("[GameplayCameraManager] Raising initial gameplay state event");
         EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.Gameplay });
     }
 
@@ -136,7 +136,7 @@ public class GameplayCameraManager : MonoBehaviour
         updateUIPageEventBinding = new EventBinding<UpdateUIPageEvent>(HandleUIPageEvent);
         EventBus<UpdateUIPageEvent>.Register(updateUIPageEventBinding);
 
-        Debug.Log("[GameplayCameraManager] Event bindings registered in OnEnable");
+        //Debug.Log("[GameplayCameraManager] Event bindings registered in OnEnable");
     }
 
     private void OnDisable()
@@ -167,7 +167,7 @@ public class GameplayCameraManager : MonoBehaviour
         
         if (evt.uiPage == Enum_UIMenuPage.Gameplay)
         {
-            Debug.Log($"[GameplayCameraManager] Enabling gameplay mode - gameplayCam.enabled before: {gameplayCam.enabled}");
+            //Debug.Log($"[GameplayCameraManager] Enabling gameplay mode - gameplayCam.enabled before: {gameplayCam.enabled}");
             
             gameplayVirtualCam.Priority = 10;
             if (cinematicVirtualCam != null)
@@ -175,11 +175,11 @@ public class GameplayCameraManager : MonoBehaviour
             gameplayCam.enabled = true;
             interactor.enabled = true;
             
-            Debug.Log($"[GameplayCameraManager] Gameplay mode enabled - gameplayCam.enabled after: {gameplayCam.enabled}, allowInput: {gameplayCam.allowInput}");
+            //Debug.Log($"[GameplayCameraManager] Gameplay mode enabled - gameplayCam.enabled after: {gameplayCam.enabled}, allowInput: {gameplayCam.allowInput}");
         }
         else if (evt.uiPage == Enum_UIMenuPage.Build)
         {
-            Debug.Log($"[GameplayCameraManager] Switching to Build mode - disabling gameplayCam");
+            //Debug.Log($"[GameplayCameraManager] Switching to Build mode - disabling gameplayCam");
             
             gameplayVirtualCam.Priority = 0;
             if (cinematicVirtualCam != null)
@@ -191,7 +191,7 @@ public class GameplayCameraManager : MonoBehaviour
         }
         else
         {
-            Debug.Log($"[GameplayCameraManager] Switching to other mode: {evt.uiPage} - disabling gameplayCam");
+            //Debug.Log($"[GameplayCameraManager] Switching to other mode: {evt.uiPage} - disabling gameplayCam");
             
             gameplayCam.enabled = false;
             

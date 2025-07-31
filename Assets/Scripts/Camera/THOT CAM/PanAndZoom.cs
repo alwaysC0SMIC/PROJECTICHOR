@@ -102,12 +102,17 @@ public class PanAndZoom : MonoBehaviour
     private bool Debug_OverNovaUI => NovaHoverGuard.IsOverNovaUI;
 
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📊 Nova Hover Count")]
+    private int Debug_NovaHoverCount => NovaHoverGuard.ActiveHoverCount;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
     [LabelText("📊 Input State")]
     [DisplayAsString]
     private string Debug_InputState => 
         $"Enabled: {enabled} | " +
         $"AllowInput: {allowInput} | " +
         $"OverUI: {NovaHoverGuard.IsOverNovaUI} | " +
+        $"HoverCount: {NovaHoverGuard.ActiveHoverCount} | " +
         $"Dragging: {isDragging}";
 
     [BoxGroup("Debug Controls"), GUIColor(0.2f, 0.7f, 1f)]
@@ -149,6 +154,19 @@ public class PanAndZoom : MonoBehaviour
         enabled = true;
         allowInput = true;
     }
+
+    [BoxGroup("Debug Controls"), GUIColor(1f, 0.8f, 0.2f)]
+    [Button(ButtonSizes.Medium, Name = "Reset Nova Hover", Icon = SdfIconType.XCircle)]
+    private void Debug_ResetNovaHover()
+    {
+        // Force reset the Nova hover count by reflecting the private field
+        var field = typeof(NovaHoverGuard).GetField("ActiveHoverCount", 
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        if (field != null)
+        {
+            field.SetValue(null, 0);
+        }
+    }
 #endif
 
     private void Start()
@@ -165,6 +183,13 @@ public class PanAndZoom : MonoBehaviour
     {
         if (allowInput)
         {
+            // Auto-reset Nova hover state if it seems stuck
+            // If we're not over any UI but the count is still > 0, reset it
+            if (NovaHoverGuard.ActiveHoverCount > 0 && !Input.mousePresent)
+            {
+                ResetNovaHoverState();
+            }
+
             //INTERACTION WITH UI
             HandlePanInput();
             HandleOrbitInput();
@@ -172,9 +197,26 @@ public class PanAndZoom : MonoBehaviour
         }
     }
 
+    private void ResetNovaHoverState()
+    {
+        var field = typeof(NovaHoverGuard).GetField("ActiveHoverCount", 
+            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+        if (field != null)
+        {
+            field.SetValue(null, 0);
+        }
+    }
+
     // HANDLE PANNING INPUT (LEFT MOUSE OR SINGLE TOUCH)
     private void HandlePanInput()
     {
+        // Check for stuck Nova hover state and reset if needed
+        if (NovaHoverGuard.IsOverNovaUI && NovaHoverGuard.ActiveHoverCount > 3)
+        {
+            // If hover count is suspiciously high, reset it
+            ResetNovaHoverState();
+        }
+
         // Don't handle input if mouse is over UI
         if (NovaHoverGuard.IsOverNovaUI)
             return;

@@ -320,14 +320,14 @@ public class UIPageManager : MonoBehaviour
     [Button("▶ Open Page")]
     private void SimulateOpen() 
     {
-        Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: {pageType}");
+        //Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: {pageType}");
         EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = pageType });
     }
 
     [Button("⏹ Close Page")]
     private void SimulateClose() 
     {
-        Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: None");
+        //Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: None");
         EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.None });
     }
 

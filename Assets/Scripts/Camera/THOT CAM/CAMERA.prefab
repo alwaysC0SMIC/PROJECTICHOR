@@ -660,7 +660,7 @@ MonoBehaviour:
   dragThreshold: 5
   zoomOutMin: 1
   zoomOutMax: 6
-  panRadius: 20
+  panRadius: 4
   panCenter: {x: 0, y: 0, z: 0}
   panOffset: {x: 0, y: -1, z: 0}
   allowInput: 1
