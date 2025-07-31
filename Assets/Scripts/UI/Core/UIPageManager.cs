@@ -318,10 +318,32 @@ public class UIPageManager : MonoBehaviour
     #region HELPERS
 
     [Button("▶ Open Page")]
-    private void SimulateOpen() => EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = pageType });
+    private void SimulateOpen() 
+    {
+        Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: {pageType}");
+        EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = pageType });
+    }
 
     [Button("⏹ Close Page")]
-    private void SimulateClose() => EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.None });
+    private void SimulateClose() 
+    {
+        Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: None");
+        EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.None });
+    }
+
+#if UNITY_EDITOR
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📄 Page Type")]
+    private Enum_UIMenuPage Debug_PageType => pageType;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📊 Event Bus Status")]
+    [DisplayAsString]
+    private string Debug_EventBusStatus => 
+        $"Registered: {(updateUIPage != null ? "Yes" : "No")} | " +
+        $"Page: {pageType} | " +
+        $"Time: {System.DateTime.Now:HH:mm:ss}";
+#endif
 
     private void SetupPage()
     {

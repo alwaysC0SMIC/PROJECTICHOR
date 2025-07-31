@@ -81,12 +81,40 @@ public class PanAndZoom : MonoBehaviour
     [SerializeField] public float resetDuration = 0.5f;
 
 #if UNITY_EDITOR
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🎮 Component Enabled")]
+    private bool Debug_ComponentEnabled => enabled;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🎯 Allow Input")]
+    private bool Debug_AllowInput => allowInput;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🖱 Is Dragging")]
+    private bool Debug_IsDragging => isDragging;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🌀 Is Orbiting")]
+    private bool Debug_IsOrbiting => isOrbiting;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🖥 Over Nova UI")]
+    private bool Debug_OverNovaUI => NovaHoverGuard.IsOverNovaUI;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📊 Input State")]
+    [DisplayAsString]
+    private string Debug_InputState => 
+        $"Enabled: {enabled} | " +
+        $"AllowInput: {allowInput} | " +
+        $"OverUI: {NovaHoverGuard.IsOverNovaUI} | " +
+        $"Dragging: {isDragging}";
+
     [BoxGroup("Debug Controls"), GUIColor(0.2f, 0.7f, 1f)]
     [Button(ButtonSizes.Large, Name = "Reset Camera", Icon = SdfIconType.Camera)]
     private void Debug_ResetCamera()
     {
         ResetCam();
-        Debug.Log("Camera reset via debug button.");
     }
 
     [BoxGroup("Debug Controls"), GUIColor(0.7f, 1f, 0.2f)]
@@ -96,7 +124,6 @@ public class PanAndZoom : MonoBehaviour
         if (thisCamera != null)
         {
             panCenter = thisCamera.transform.position + panOffset;
-            Debug.Log($"Pan center set to: {panCenter} (with offset: {panOffset})");
         }
     }
 
@@ -105,7 +132,6 @@ public class PanAndZoom : MonoBehaviour
     private void Debug_ToggleInput()
     {
         allowInput = !allowInput;
-        Debug.Log($"Input {(allowInput ? "enabled" : "disabled")} via debug button.");
     }
 
     [BoxGroup("Debug Controls"), GUIColor(1f, 0.2f, 0.8f)]
@@ -114,7 +140,14 @@ public class PanAndZoom : MonoBehaviour
     {
         orbitRotation = orbitRotationDefault;
         ApplyOrbitRotation();
-        Debug.Log("Orbit rotation reset to default.");
+    }
+
+    [BoxGroup("Debug Controls"), GUIColor(0.8f, 0.3f, 0.8f)]
+    [Button(ButtonSizes.Medium, Name = "Force Enable Component", Icon = SdfIconType.PlayFill)]
+    private void Debug_ForceEnable()
+    {
+        enabled = true;
+        allowInput = true;
     }
 #endif
 
@@ -142,6 +175,10 @@ public class PanAndZoom : MonoBehaviour
     // HANDLE PANNING INPUT (LEFT MOUSE OR SINGLE TOUCH)
     private void HandlePanInput()
     {
+        // Don't handle input if mouse is over UI
+        if (NovaHoverGuard.IsOverNovaUI)
+            return;
+
         if (Input.GetMouseButtonDown(0))
         {
             touchStart = thisCamera.ScreenToWorldPoint(Input.mousePosition);
@@ -198,6 +235,10 @@ public class PanAndZoom : MonoBehaviour
     // HANDLE ORBIT INPUT (RIGHT MOUSE OR TWO-FINGER TOUCH)
     private void HandleOrbitInput()
     {
+        // Don't handle input if mouse is over UI
+        if (NovaHoverGuard.IsOverNovaUI)
+            return;
+
         // PC/Mac/WebGL: Right Mouse Drag
         if (Input.GetMouseButtonDown(1))
         {
@@ -233,6 +274,10 @@ public class PanAndZoom : MonoBehaviour
 
     void Zoom(float increment)
     {
+        // Don't handle zoom if mouse is over UI
+        if (NovaHoverGuard.IsOverNovaUI)
+            return;
+
         Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize - increment, zoomOutMin, zoomOutMax);
         virtCam.Lens.OrthographicSize = Camera.main.orthographicSize;
     }

@@ -393,7 +393,6 @@ GameObject:
   - component: {fileID: 8384790851079731883}
   - component: {fileID: 1402775272499980295}
   - component: {fileID: 849038402039388189}
-  - component: {fileID: 911414012140175284}
   m_Layer: 0
   m_Name: UI Camera
   m_TagString: Untagged
@@ -511,34 +510,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &911414012140175284
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7180516498204538795}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9035f508f2cd08246942b73e0bd50223, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  allowCloseWhenClickOff: 0
-  uiPageWhenClickOff: 1
-  cam: {fileID: 0}
-  mouseEnabled: 1
-  invertScrolling: 1
-  touchEnabled: 1
-  navigationEnabled: 0
-  startNavigationFrom: {fileID: 0}
-  NavigationIndicator: {fileID: 0}
-  updateNavigationEveryXSeconds: 0.25
-  UpKey: 273
-  DownKey: 274
-  LeftKey: 276
-  RightKey: 275
-  SelectKey: 13
-  DeselectKey: 27
 --- !u!1 &7827388809364927972
 GameObject:
   m_ObjectHideFlags: 0
@@ -691,6 +662,7 @@ MonoBehaviour:
   zoomOutMax: 6
   panRadius: 20
   panCenter: {x: 0, y: 0, z: 0}
+  panOffset: {x: 0, y: -1, z: 0}
   allowInput: 1
   orbitRotation: 0
   orbitRotationDefault: 0
@@ -767,7 +739,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: -5
+  near clip plane: -25
   far clip plane: 1000
   field of view: 60
   orthographic: 1

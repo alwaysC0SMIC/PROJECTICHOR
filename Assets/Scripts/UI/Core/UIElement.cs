@@ -136,6 +136,9 @@ public class UIElement : MonoBehaviour
 
         DOTween.Kill(transform);
 
+        // Set initial states before playing tweens
+        SetInitialStatesForEnableTweens();
+
         // Play enable list
         PlayPresetList(enableTweens, enablePlayMode, onComplete: EnableComponents);
 
@@ -159,6 +162,7 @@ public class UIElement : MonoBehaviour
             PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
             {
                 if (Root != null) Root.Visible = false;
+                // Don't reset scale here - let the tween handle final state
             });
         }
         else
@@ -171,7 +175,10 @@ public class UIElement : MonoBehaviour
 
             if (t != null)
             {
-                t.OnComplete(() => { if (Root != null) Root.Visible = false; });
+                t.OnComplete(() => { 
+                    if (Root != null) Root.Visible = false; 
+                    // Don't reset scale here either
+                });
             }
             else
             {
@@ -248,8 +255,7 @@ public class UIElement : MonoBehaviour
         if (Root != null)
         {
             Root.Visible = false;
-            // Keep transform sane for next show
-            Root.transform.localScale = Vector3.one;
+            // Don't reset scale here - preserve whatever state the tweens left it in
         }
 
         isEnabled = false;
@@ -261,6 +267,68 @@ public class UIElement : MonoBehaviour
     #endregion
 
     #region INTERNAL HELPERS
+
+    private void SetInitialStatesForEnableTweens()
+    {
+        if (enableTweens == null || enableTweens.Count == 0) return;
+
+        foreach (var item in enableTweens)
+        {
+            if (item.preset == null) continue;
+
+            var preset = item.preset;
+            var overrideObj = item.targetOverride;
+
+            // Set common initial states for intro animations
+            switch (preset.tweenType)
+            {
+                case TweenPreset.TweenType.Scale:
+                {
+                    Transform targetTransform = GetTargetTransform(overrideObj);
+                    if (targetTransform != null)
+                    {
+                        // Only reset to zero if the scale is currently at normal size (1,1,1)
+                        // This preserves the scaled-down state from disable animations
+                        if (Vector3.Distance(targetTransform.localScale, Vector3.one) < 0.1f)
+                        {
+                            targetTransform.localScale = Vector3.zero;
+                        }
+                        // If it's already small (from disable), leave it as is for the enable animation
+                    }
+                    break;
+                }
+                case TweenPreset.TweenType.Fade:
+                {
+                    CanvasGroup cg = GetTargetCanvasGroup(overrideObj);
+                    if (cg != null)
+                    {
+                        // Start from alpha 0 for intro fade animations
+                        cg.alpha = 0f;
+                    }
+                    break;
+                }
+                // For Move and Rotate, let the preset handle the initial state
+                case TweenPreset.TweenType.Move:
+                case TweenPreset.TweenType.Rotate:
+                default:
+                    break;
+            }
+        }
+    }
+
+    private Transform GetTargetTransform(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is Transform t) return t;
+        if (overrideObj is Component comp) return comp.transform;
+        return this.transform;
+    }
+
+    private CanvasGroup GetTargetCanvasGroup(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is CanvasGroup cg) return cg;
+        if (overrideObj is Component comp) return comp.GetComponent<CanvasGroup>();
+        return GetComponent<CanvasGroup>();
+    }
 
     private void AutoCacheComponents()
     {
