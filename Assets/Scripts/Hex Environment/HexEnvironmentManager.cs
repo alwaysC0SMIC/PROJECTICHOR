@@ -631,7 +631,7 @@ public class HexEnvironmentManager : MonoBehaviour
         switch (lanePreset)
         {
             case LanePreset.Beginner:
-                numberOfLanes = 2;
+                numberOfLanes = 1;
                 globalCurviness = 0.1f;
                 globalRandomness = 0.0f;
                 globalMergeProbability = 0.0f;
@@ -642,7 +642,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 break;
                 
             case LanePreset.Balanced:
-                numberOfLanes = 3;
+                numberOfLanes = 2;
                 globalCurviness = 0.4f;
                 globalRandomness = 0.3f;
                 globalMergeProbability = 0.2f;
@@ -653,7 +653,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 break;
                 
             case LanePreset.Chaotic:
-                numberOfLanes = 4;
+                numberOfLanes = 3;
                 globalCurviness = 0.9f;
                 globalRandomness = 0.8f;
                 globalMergeProbability = 0.6f;
@@ -697,7 +697,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 break;
                 
             case LanePreset.Labyrinth:
-                numberOfLanes = 5;
+                numberOfLanes = 4;
                 globalCurviness = 1.0f;
                 globalRandomness = 0.7f;
                 globalMergeProbability = 0.8f;
@@ -719,7 +719,7 @@ public class HexEnvironmentManager : MonoBehaviour
                 break;
                 
             case LanePreset.Maximum:
-                numberOfLanes = 6;
+                numberOfLanes = 4;
                 globalCurviness = 0.8f;
                 globalRandomness = 0.6f;
                 globalMergeProbability = 0.5f;
@@ -1891,46 +1891,69 @@ public class HexEnvironmentManager : MonoBehaviour
     {
         laneSpawnPoints.Clear();
         
-        // For each lane, find the outermost hex and randomly pick an adjacent edge hex as spawn
+        // For each lane, create a new edge spawn hex connected to the first hex of the lane
         for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
         {
             var lane = generatedLanes[laneIndex];
-            if (lane.Count < 2) continue;
+            if (lane.Count == 0) continue;
             
-            // Get the outermost hex of this lane
-            HexCoordinates outermostHex = lane[lane.Count - 1];
+            // Get the first hex of this lane (the starting edge hex)
+            HexCoordinates firstHex = lane[0];
             
-            // Find all edge hexes adjacent to the outermost pathway hex
-            List<HexCoordinates> possibleSpawns = new List<HexCoordinates>();
+            // Find the best direction to place the edge spawn (away from center)
+            HexCoordinates edgeSpawnCoord = FindBestEdgeSpawnPosition(firstHex);
             
-            foreach (var direction in HEX_DIRECTIONS)
+            if (edgeSpawnCoord != HexCoordinates.Zero)
             {
-                HexCoordinates adjacentCoord = new HexCoordinates(
-                    outermostHex.q + direction.q,
-                    outermostHex.r + direction.r
-                );
+                // Create a new hex data for the edge spawn
+                HexData edgeSpawnData = new HexData(edgeSpawnCoord, HexType.EdgeSpawn);
+                edgeSpawnData.laneId = laneIndex;
                 
-                // Check if this hex is on the grid edge
-                int distance = Mathf.Max(Mathf.Abs(adjacentCoord.q), 
-                                       Mathf.Abs(adjacentCoord.r), 
-                                       Mathf.Abs(-adjacentCoord.q - adjacentCoord.r));
+                // Add to hex grid (this extends beyond the original grid radius)
+                hexGrid[edgeSpawnCoord] = edgeSpawnData;
+                laneSpawnPoints.Add(edgeSpawnCoord);
                 
-                if (distance <= gridRadius && hexGrid.ContainsKey(adjacentCoord) && 
-                    hexGrid[adjacentCoord].type == HexType.Environment)
-                {
-                    possibleSpawns.Add(adjacentCoord);
-                }
-            }
-            
-            // Randomly select one spawn point for this lane
-            if (possibleSpawns.Count > 0)
-            {
-                HexCoordinates selectedSpawn = possibleSpawns[Random.Range(0, possibleSpawns.Count)];
-                hexGrid[selectedSpawn].type = HexType.EdgeSpawn;
-                hexGrid[selectedSpawn].laneId = laneIndex;
-                laneSpawnPoints.Add(selectedSpawn);
+                Debug.Log($"[HexEnvironmentManager] Created edge spawn at {edgeSpawnCoord} for lane {laneIndex}, connected to first hex {firstHex}");
             }
         }
+        
+        Debug.Log($"[HexEnvironmentManager] Generated {laneSpawnPoints.Count} edge spawn points");
+    }
+    
+    private HexCoordinates FindBestEdgeSpawnPosition(HexCoordinates firstHex)
+    {
+        // Calculate direction from center to first hex
+        Vector3 centerPos = HexToWorldPosition(HexCoordinates.Zero);
+        Vector3 firstHexPos = HexToWorldPosition(firstHex);
+        Vector3 awayFromCenter = (firstHexPos - centerPos).normalized;
+        
+        // Find the direction that best aligns with moving away from center
+        float bestAlignment = -1f;
+        HexCoordinates bestDirection = HexCoordinates.Zero;
+        
+        foreach (var direction in HEX_DIRECTIONS)
+        {
+            HexCoordinates candidatePos = new HexCoordinates(
+                firstHex.q + direction.q,
+                firstHex.r + direction.r
+            );
+            
+            // Skip if this position is already occupied by grid hexes
+            if (hexGrid.ContainsKey(candidatePos)) continue;
+            
+            // Calculate alignment with away-from-center direction
+            Vector3 candidateWorldPos = HexToWorldPosition(candidatePos);
+            Vector3 candidateDirection = (candidateWorldPos - firstHexPos).normalized;
+            float alignment = Vector3.Dot(candidateDirection, awayFromCenter);
+            
+            if (alignment > bestAlignment)
+            {
+                bestAlignment = alignment;
+                bestDirection = candidatePos;
+            }
+        }
+        
+        return bestDirection;
     }
     
     private void InstantiateHexGameObjects()
@@ -2207,7 +2230,7 @@ public class HexEnvironmentManager : MonoBehaviour
         for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
         {
             var lane = generatedLanes[laneIndex];
-            if (lane.Count < 2) continue;
+            if (lane.Count < 1) continue;
             
             // Skip if only showing specific lane and this isn't it
             if (showOnlyLane >= 0 && laneIndex != showOnlyLane) continue;
@@ -2217,6 +2240,32 @@ public class HexEnvironmentManager : MonoBehaviour
                                   laneConfigurations[laneIndex].laneColor : Color.yellow;
             connectionColor.a = 0.5f;
             Gizmos.color = connectionColor;
+            
+            // Draw connection from edge spawn to first hex of lane if edge spawn exists
+            foreach (var spawnCoord in laneSpawnPoints)
+            {
+                if (hexGrid.ContainsKey(spawnCoord) && hexGrid[spawnCoord].laneId == laneIndex)
+                {
+                    Vector3 spawnPos = HexToWorldPosition(spawnCoord) + Vector3.up * (hexSize * 0.1f);
+                    Vector3 firstHexPos = HexToWorldPosition(lane[0]) + Vector3.up * (hexSize * 0.1f);
+                    
+                    // Use a distinct color for spawn connections
+                    Color spawnConnectionColor = edgeSpawnColor;
+                    spawnConnectionColor.a = 0.8f;
+                    Gizmos.color = spawnConnectionColor;
+                    
+                    // Draw thick line from spawn to first hex
+                    DrawThickLine(spawnPos, firstHexPos, hexSize * 0.15f);
+                    
+                    // Draw arrow pointing toward the first hex
+                    Vector3 direction = (firstHexPos - spawnPos).normalized;
+                    DrawArrow(firstHexPos - direction * (hexSize * 0.3f), direction, hexSize * 0.4f);
+                    
+                    // Reset color for lane connections
+                    Gizmos.color = connectionColor;
+                    break;
+                }
+            }
             
             // Draw connections between lane hexes
             for (int i = 0; i < lane.Count - 1; i++)
