@@ -82,8 +82,14 @@ public class UIElement : MonoBehaviour
     [TitleGroup("Events"), SerializeField, LabelText("📣 On Enable")]
     public UnityEvent OnEnable;
 
+    [TitleGroup("Events"), SerializeField, LabelText("📣 On Enable Completion")]
+    public UnityEvent OnEnableFinish;
+
     [TitleGroup("Events"), SerializeField, LabelText("📣 On Disable")]
     public UnityEvent OnDisable;
+
+    [TitleGroup("Events"), SerializeField, LabelText("📣 On Disable Completion")]
+    public UnityEvent OnDisableFinish;
 
     [TitleGroup("Audio"), SerializeField, LabelText("🔊 Show SFX")]
     public AudioTrigger showSound = AudioTrigger.UI_Show;
@@ -176,7 +182,11 @@ public class UIElement : MonoBehaviour
         SetInitialStatesForEnableTweens();
 
         // Play enable list
-        PlayPresetList(enableTweens, enablePlayMode, onComplete: EnableComponents);
+        PlayPresetList(enableTweens, enablePlayMode, onComplete: () =>
+        {
+            EnableComponents();
+            OnEnableFinish?.Invoke();
+        });
 
         // SFX & Events
         EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
@@ -203,6 +213,7 @@ public class UIElement : MonoBehaviour
                 {
                     if (Root != null) Root.Visible = false;
                     // Don't reset scale here - let the tween handle final state
+                    OnDisableFinish?.Invoke();
                 });
             }
             else
@@ -218,11 +229,13 @@ public class UIElement : MonoBehaviour
                     t.OnComplete(() => { 
                         if (Root != null) Root.Visible = false; 
                         // Don't reset scale here either
+                        OnDisableFinish?.Invoke();
                     });
                 }
                 else
                 {
                     if (Root != null) Root.Visible = false;
+                    OnDisableFinish?.Invoke();
                 }
             }
         }
@@ -231,9 +244,16 @@ public class UIElement : MonoBehaviour
             // Don't hide the element, but still play disable animations if they exist
             if (hadPresets)
             {
-                PlayPresetList(disableTweens, disablePlayMode, onComplete: null);
+                PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+                {
+                    OnDisableFinish?.Invoke();
+                });
             }
-            // If no presets and not hiding, no visual changes needed
+            else
+            {
+                // If no presets and not hiding, trigger completion immediately
+                OnDisableFinish?.Invoke();
+            }
         }
 
         EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
@@ -318,6 +338,9 @@ public class UIElement : MonoBehaviour
 
         if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
         if (triggerEvents) OnEnable?.Invoke();
+        
+        // Trigger completion event immediately for instant enable
+        if (triggerEvents) OnEnableFinish?.Invoke();
     }
 
     /// <summary>
@@ -352,6 +375,9 @@ public class UIElement : MonoBehaviour
 
         if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         if (triggerEvents) OnDisable?.Invoke();
+        
+        // Trigger completion event immediately for instant disable
+        if (triggerEvents) OnDisableFinish?.Invoke();
     }
 
     #endregion

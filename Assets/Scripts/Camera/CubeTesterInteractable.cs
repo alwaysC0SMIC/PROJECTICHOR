@@ -4,8 +4,8 @@ using DG.Tweening;
 public class CubeTesterInteractable : MonoBehaviour, IInteractable
 {
     #region CONSTANTS
-    private const float BASE_SCALE = 7f;
-    private const float HOVER_SCALE = 8f;
+    private const float BASE_SCALE = 1f;
+    private const float HOVER_SCALE = 1.1f;
     #endregion
 
     #region CONFIG

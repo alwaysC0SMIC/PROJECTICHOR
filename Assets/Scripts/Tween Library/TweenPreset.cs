@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using DG.Tweening;
 using Sirenix.OdinInspector;
+using Nova;
 
 [CreateAssetMenu(fileName = "NewTweenPreset", menuName = "Tween/Tween Preset")]
 public class TweenPreset : ScriptableObject

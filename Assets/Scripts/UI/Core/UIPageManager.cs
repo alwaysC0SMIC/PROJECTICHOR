@@ -55,8 +55,20 @@ public class UIPageManager : MonoBehaviour
 
     [TitleGroup("Page Animation Settings")]
     [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
+    [LabelText("Tween In Target (optional)")]
+    [Tooltip("Optional Nova UIBlock target for Tween In. If null, will use pageRoot.")]
+    [SerializeField] private UIBlock tweenInTarget;
+
+    [TitleGroup("Page Animation Settings")]
+    [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
     [LabelText("Tween Out")]
     [SerializeField] private TweenPreset tweenOut;
+
+    [TitleGroup("Page Animation Settings")]
+    [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
+    [LabelText("Tween Out Target (optional)")]
+    [Tooltip("Optional Nova UIBlock target for Tween Out. If null, will use pageRoot.")]
+    [SerializeField] private UIBlock tweenOutTarget;
 
     [TitleGroup("Page Animation Settings/Sequence Control")]
     [ShowIf(nameof(useFullPageAnimation))]
@@ -265,9 +277,19 @@ public class UIPageManager : MonoBehaviour
         if (pageRoot == null) yield break;
 
         var targetTween = enable ? tweenIn : tweenOut;
+        var targetUIBlock = enable ? tweenInTarget : tweenOutTarget;
+        
         if (targetTween != null)
         {
-            Tween tween = targetTween.ApplyTween(pageRoot.transform);
+            Tween tween = null;
+            
+            // Determine the target to use - custom target or fallback to pageRoot
+            UIBlock uiBlockTarget = targetUIBlock != null ? targetUIBlock : pageRoot;
+            
+            // Use Transform target for tween types (Move, Scale, Rotate, Fade)
+            Transform transformTarget = uiBlockTarget != null ? uiBlockTarget.transform : pageRoot.transform;
+            tween = targetTween.ApplyTween(transformTarget);
+            
             if (tween != null)
                 yield return tween.WaitForCompletion();
         }
