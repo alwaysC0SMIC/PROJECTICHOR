@@ -31549,6 +31549,8 @@ MonoBehaviour:
   cardIntroAnimationDuration: 0.2
   cardOutroAnimationDuration: 0.2
   scrollInputBuffer: 0
+  dragReturnDuration: 0.3
+  dragScaleFactor: 1.1
 --- !u!114 &1078295065
 MonoBehaviour:
   m_ObjectHideFlags: 0
