@@ -16,35 +16,50 @@ public class CardHandManager : MonoBehaviour
 
     private static float selectedScalePercentage = 1.35F;
 
-    [SerializeField] GameObject cardPrefab;
+    [SerializeField] 
+    private GameObject cardPrefab;
     
-    [SerializeField] private List<GameObject> cardHand;
+    [SerializeField, Tooltip("Invisible prefab used for gap animations during drag operations")]
+    private GameObject temporaryPlacementPrefab;
     
-    [Header("Selection Range")]
-    [SerializeField] private int visibleCardCount = 5;
-    [SerializeField] private int currentStartIndex = 0;
+    private List<GameObject> cardHand = new List<GameObject>();
     
-    [Header("Scroll Settings")]
-    [SerializeField] private float scrollSensitivity = 100f;
-    [SerializeField] private float cardIntroAnimationDuration = 0.4f;
-    [SerializeField] private float cardOutroAnimationDuration = 0.3f;
-    [SerializeField] private float scrollInputBuffer = 0.1f; // Extra buffer time after animations
+    [SerializeField, Range(3, 10), Tooltip("Number of cards visible at once")]
+    private int visibleCardCount = 5;
     
-    [Header("Drag Settings")]
-    [SerializeField] private float dragReturnDuration = 0.3f;
-    [SerializeField] private float dragScaleFactor = 1.1f; // Scale when dragging
+    private int currentStartIndex = 0;
+    
+    [SerializeField, Range(50f, 200f), Tooltip("Mouse scroll wheel sensitivity")]
+    private float scrollSensitivity = 100f;
+    
+    [SerializeField, Range(0.05f, 0.5f), Tooltip("Cooldown buffer after scroll animations")]
+    private float scrollInputBuffer = 0.1f;
+    
+    [SerializeField, Range(0.1f, 2f), Tooltip("Duration for cards appearing")]
+    private float cardIntroAnimationDuration = 0.4f;
+    
+    [SerializeField, Range(0.1f, 2f), Tooltip("Duration for cards disappearing")]
+    private float cardOutroAnimationDuration = 0.3f;
+    
+    [SerializeField, Range(0.1f, 2f), Tooltip("Duration for dragged cards returning to position AND gap animations")]
+    private float dragReturnDuration = 0.3f;
+    
+    [SerializeField, Range(1f, 2f), Tooltip("Scale multiplier when dragging cards")]
+    private float dragScaleFactor = 1.1f;
     
     private bool isScrolling = false;
     private float lastScrollTime = 0f;
-    private bool isPointerOver = false; // Track mouse hover
+    private bool isPointerOver = false;
     
-    // Drag state tracking
     private GameObject draggedCard = null;
     private Vector3 draggedCardOriginalPosition;
     private Vector3 draggedCardOriginalScale;
     private int draggedCardOriginalIndex;
     private Transform draggedCardOriginalParent;
     private GameObject temporaryReplacementCard = null;
+    private GameObject temporaryPlacementCard = null;
+
+    public static bool IsAnyCardBeingDragged { get; private set; } = false;
 
 
     void Start()
@@ -67,7 +82,7 @@ public class CardHandManager : MonoBehaviour
         if (draggedCard != null) return;
 
         // Check if we're still in scroll cooldown period
-        if (isScrolling || Time.time < lastScrollTime + GetTotalAnimationDuration() + scrollInputBuffer) 
+        if (isScrolling || Time.deltaTime < lastScrollTime + GetTotalAnimationDuration() + scrollInputBuffer) 
             return;
         
         // Always allow scrolling if we have cards
@@ -132,7 +147,7 @@ public class CardHandManager : MonoBehaviour
         cardHand.RemoveAt(0);
         cardHand.Add(cardToMove);
         
-        Debug.Log($"[CardHandManager] Scroll Right: Moved card {cardToMove.name} to back");
+        //Debug.Log($"[CardHandManager] Scroll Right: Moved card {cardToMove.name} to back");
         
         // Start coordinated animation - new card scales up, old card scales down
         StartCoroutine(CoordinatedScrollAnimation());
@@ -282,7 +297,7 @@ public class CardHandManager : MonoBehaviour
     {
         cardHand.Clear();
 
-        // Example of generating a hand with 8 cards (more than visible range)
+        // Generate hand with 8 cards (more than visible range)
         for (int i = 0; i < 8; i++)
         {
             GameObject card = Instantiate(cardPrefab, transform);
@@ -429,8 +444,8 @@ public class CardHandManager : MonoBehaviour
             }
         }
         
-        Debug.Log($"[CardHandManager] Reordered hierarchy. Visible cards: {string.Join(", ", cardHand.Take(visibleCardCount).Select(c => c.name))}");
-        Debug.Log($"[CardHandManager] Active cards: {string.Join(", ", cardHand.Where(c => c.activeInHierarchy).Select(c => c.name))}");
+       // Debug.Log($"[CardHandManager] Reordered hierarchy. Visible cards: {string.Join(", ", cardHand.Take(visibleCardCount).Select(c => c.name))}");
+       // Debug.Log($"[CardHandManager] Active cards: {string.Join(", ", cardHand.Where(c => c.activeInHierarchy).Select(c => c.name))}");
     }
     
     private IEnumerator ResetScrollingFlag()
@@ -477,7 +492,7 @@ public class CardHandManager : MonoBehaviour
             cardIntroAnimationDuration
         ).SetEase(Ease.OutCubic);
 
-        Debug.Log($"[CardHandManager] Started simultaneous animation for {card.name} from 0 to 1");
+       // Debug.Log($"[CardHandManager] Started simultaneous animation for {card.name} from 0 to 1");
     }
     
     private IEnumerator AnimateCardToInvisible(GameObject card)
@@ -506,7 +521,7 @@ public class CardHandManager : MonoBehaviour
             cardOutroAnimationDuration
         ).SetEase(Ease.InCubic);
         
-        Debug.Log($"[CardHandManager] Started disappear animation for {card.name} from 100% to 0% with scale");
+        //Debug.Log($"[CardHandManager] Started disappear animation for {card.name} from 100% to 0% with scale");
     }
     
     private IEnumerator AnimateCardToInvisibleAndDisable(GameObject card, System.Action onComplete = null)
@@ -537,12 +552,12 @@ public class CardHandManager : MonoBehaviour
         ).SetEase(Ease.InCubic).OnComplete(() => {
             // Disable the card after animation completes
             card.SetActive(false);
-            Debug.Log($"[CardHandManager] Disabled card {card.name} after animation");
+            //Debug.Log($"[CardHandManager] Disabled card {card.name} after animation");
             finished = true;
             onComplete?.Invoke(); // Call the callback if provided
         });
         
-        Debug.Log($"[CardHandManager] Started simultaneous disappear animation for {card.name} from 1 to 0");
+        //Debug.Log($"[CardHandManager] Started simultaneous disappear animation for {card.name} from 1 to 0");
 
         // Wait until animation is finished
         while (!finished)
@@ -605,25 +620,6 @@ public class CardHandManager : MonoBehaviour
         return visibleCards;
     }
     
-    [Button("🎨 Randomize Card Colors")]
-    private void RandomizeCardColors()
-    {
-        foreach (GameObject card in cardHand)
-        {
-            UIBlock2D cardBlock = card.GetComponent<UIBlock2D>();
-            if (cardBlock != null)
-            {
-                cardBlock.Color = new Color(
-                    Random.Range(0.3f, 1f),
-                    Random.Range(0.3f, 1f),
-                    Random.Range(0.3f, 1f),
-                    1f
-                );
-            }
-        }
-        Debug.Log("[CardHandManager] Randomized all card colors");
-    }
-    
     #endregion
 
     // ===============================
@@ -661,6 +657,9 @@ public class CardHandManager : MonoBehaviour
         draggedCardOriginalScale = card.transform.localScale;
         draggedCardOriginalParent = card.transform.parent;
         
+        // Set static flag so other scripts know a card is being dragged
+        IsAnyCardBeingDragged = true;
+        
         // Scale up the dragged card slightly
         card.transform.localScale = draggedCardOriginalScale * dragScaleFactor;
         
@@ -686,7 +685,10 @@ public class CardHandManager : MonoBehaviour
         // Show replacement card if available
         ShowReplacementCard();
         
-        Debug.Log($"[CardHandManager] Started dragging {card.name}, moved to {card.transform.parent.name}");
+        // Create temporary placement card for gap animation
+        CreateTemporaryPlacementCard();
+        
+       // Debug.Log($"[CardHandManager] Started dragging {card.name}, moved to {card.transform.parent.name}");
     }
     
     private void HandleCardDrag(GameObject card, Gesture.OnDrag dragData)
@@ -706,16 +708,17 @@ public class CardHandManager : MonoBehaviour
     {
         if (draggedCard != card) return;
         
-        Debug.Log($"[CardHandManager] Released drag on {card.name}");
+        //Debug.Log($"[CardHandManager] Released drag on {card.name}");
         
-        // Create temporary spacer card to prepare space for returning card
-        StartCoroutine(CreateTemporarySpacerAndReturn(card));
+        // Start gap-opening animation and return card
+        StartCoroutine(OpenGapAndReturnCard(card));
         
         // Hide replacement card
         HideReplacementCard();
         
         // Reset drag state
         draggedCard = null;
+        IsAnyCardBeingDragged = false;
     }
     
     private void ShowReplacementCard()
@@ -742,7 +745,7 @@ public class CardHandManager : MonoBehaviour
             );
             StartCoroutine(AnimateCardToVisible(nextCard, 0f));
             
-            Debug.Log($"[CardHandManager] Showing replacement card {nextCard.name} at the end of visible cards (index {insertIndex})");
+            //Debug.Log($"[CardHandManager] Showing replacement card {nextCard.name} at the end of visible cards (index {insertIndex})");
         }
     }
     
@@ -750,7 +753,7 @@ public class CardHandManager : MonoBehaviour
     {
         if (temporaryReplacementCard != null)
         {
-            Debug.Log($"[CardHandManager] Hiding replacement card {temporaryReplacementCard.name}");
+            //Debug.Log($"[CardHandManager] Hiding replacement card {temporaryReplacementCard.name}");
             
             // Animate out and disable the replacement card
             StartCoroutine(AnimateCardToInvisibleAndDisable(temporaryReplacementCard, () => {
@@ -772,6 +775,53 @@ public class CardHandManager : MonoBehaviour
             }
         }
         return null;
+    }
+    
+    private void CreateTemporaryPlacementCard()
+    {
+        // Create invisible temporary placement card at the dragged card's original position
+        temporaryPlacementCard = Instantiate(temporaryPlacementPrefab, draggedCardOriginalParent);
+        temporaryPlacementCard.name = "TempPlacement_" + draggedCard.name;
+        temporaryPlacementCard.transform.SetSiblingIndex(draggedCardOriginalIndex);
+        
+        // Make it invisible but still take up layout space
+        UIBlock2D placementBlock = temporaryPlacementCard.GetComponent<UIBlock2D>();
+        placementBlock.Color = new Color(0, 0, 0, 0); // Fully transparent
+        
+        // Start with normal size, then animate to close the gap
+        placementBlock.Size = new Length3(
+            Length.Percentage(0.1875f), // Start with small width (18.75%)
+            placementBlock.Size.Y,
+            placementBlock.Size.Z
+        );
+        
+        temporaryPlacementCard.SetActive(true);
+        
+        // Force layout update
+        Canvas.ForceUpdateCanvases();
+        
+        // Animate the gap closing (width from 0.1875 to 0) - synchronized with drag return duration
+        DOTween.To(
+            () => 0.1875f,
+            value => {
+                placementBlock.Size = new Length3(
+                    Length.Percentage(value),
+                    placementBlock.Size.Y,
+                    placementBlock.Size.Z
+                );
+            },
+            0f,
+            dragReturnDuration // Use same duration as drag return for synchronization
+        ).SetEase(Ease.InCubic).OnComplete(() => {
+            // Only disable the card AFTER the animation completes
+            if (temporaryPlacementCard != null)
+            {
+                temporaryPlacementCard.SetActive(false);
+                Debug.Log($"[CardHandManager] Disabled temporary placement card after gap close animation completed");
+            }
+        });
+        
+        Debug.Log($"[CardHandManager] Created temporary placement card for gap animation");
     }
     
     private IEnumerator ReturnCardToPosition(GameObject card)
@@ -806,6 +856,52 @@ public class CardHandManager : MonoBehaviour
         Canvas.ForceUpdateCanvases();
         
         Debug.Log($"[CardHandManager] Returned {card.name} to original parent {draggedCardOriginalParent.name} at index {draggedCardOriginalIndex}");
+    }
+    
+    private IEnumerator OpenGapAndReturnCard(GameObject card)
+    {
+        // Start both animations simultaneously: gap opening and card returning
+        if (temporaryPlacementCard != null)
+        {
+            // Re-enable the card before animating it back up
+            temporaryPlacementCard.SetActive(true);
+            Debug.Log($"[CardHandManager] Re-enabled temporary placement card for gap opening");
+            
+            UIBlock2D placementBlock = temporaryPlacementCard.GetComponent<UIBlock2D>();
+            
+            // Start gap opening animation (synchronized with drag return)
+            DOTween.To(
+                () => 0f,
+                value => {
+                    placementBlock.Size = new Length3(
+                        Length.Percentage(value),
+                        placementBlock.Size.Y,
+                        placementBlock.Size.Z
+                    );
+                },
+                0.1875f, // Open to 18.75% width instead of 100%
+                dragReturnDuration // Synchronized with drag return animation
+            ).SetEase(Ease.OutCubic);
+            
+            Debug.Log($"[CardHandManager] Opening gap for returning card {card.name}");
+        }
+        
+        // Start the card return animation simultaneously (not waiting for gap)
+        StartCoroutine(ReturnCardToPosition(card));
+        
+        // Wait for both animations to complete (same duration)
+        yield return new WaitForSeconds(dragReturnDuration);
+        
+        // Remove the temporary placement card after both animations are complete
+        if (temporaryPlacementCard != null)
+        {
+            Debug.Log($"[CardHandManager] Removing temporary placement card for {card.name}");
+            Destroy(temporaryPlacementCard);
+            temporaryPlacementCard = null;
+        }
+        
+        // Force final layout update
+        Canvas.ForceUpdateCanvases();
     }
     
     private IEnumerator CreateTemporarySpacerAndReturn(GameObject card)
@@ -885,8 +981,16 @@ public class CardHandManager : MonoBehaviour
             // Hide replacement card
             HideReplacementCard();
             
+            // Clean up temporary placement card
+            if (temporaryPlacementCard != null)
+            {
+                Destroy(temporaryPlacementCard);
+                temporaryPlacementCard = null;
+            }
+            
             // Reset drag state
             draggedCard = null;
+            IsAnyCardBeingDragged = false;
             
             Canvas.ForceUpdateCanvases();
             

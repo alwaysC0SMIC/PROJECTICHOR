@@ -217,8 +217,8 @@ public class PanAndZoom : MonoBehaviour
             ResetNovaHoverState();
         }
 
-        // Don't handle input if mouse is over UI
-        if (NovaHoverGuard.IsOverNovaUI)
+        // Don't handle input if mouse is over UI or if a card is being dragged
+        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
             return;
 
         if (Input.GetMouseButtonDown(0))
@@ -277,8 +277,8 @@ public class PanAndZoom : MonoBehaviour
     // HANDLE ORBIT INPUT (RIGHT MOUSE OR TWO-FINGER TOUCH)
     private void HandleOrbitInput()
     {
-        // Don't handle input if mouse is over UI
-        if (NovaHoverGuard.IsOverNovaUI)
+        // Don't handle input if mouse is over UI or if a card is being dragged
+        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
             return;
 
         // PC/Mac/WebGL: Right Mouse Drag
@@ -323,8 +323,8 @@ public class PanAndZoom : MonoBehaviour
 
     void Zoom(float increment)
     {
-        // Don't handle zoom if mouse is over UI
-        if (NovaHoverGuard.IsOverNovaUI)
+        // Don't handle zoom if mouse is over UI or if a card is being dragged
+        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
             return;
 
         Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize - increment, zoomOutMin, zoomOutMax);

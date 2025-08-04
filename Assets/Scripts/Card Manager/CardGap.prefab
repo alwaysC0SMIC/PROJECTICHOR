@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6186180465130882097
+--- !u!1 &8238885727883035795
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,25 +8,25 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7863493284291694843}
-  - component: {fileID: 2878695432278655293}
-  - component: {fileID: 658065520510829901}
-  - component: {fileID: 546137687463530484}
-  - component: {fileID: 2346635572977669647}
+  - component: {fileID: 2244649529193942412}
+  - component: {fileID: 7600395302848443234}
+  - component: {fileID: 5269096846316471592}
+  - component: {fileID: 732490279678257411}
+  - component: {fileID: 8985038985904580001}
   m_Layer: 5
-  m_Name: CardBase
+  m_Name: CardGap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7863493284291694843
+--- !u!4 &2244649529193942412
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6186180465130882097}
+  m_GameObject: {fileID: 8238885727883035795}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.49999994, z: 0}
@@ -35,25 +35,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2878695432278655293
+--- !u!114 &7600395302848443234
 MonoBehaviour:
   m_ObjectHideFlags: 10
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6186180465130882097}
+  m_GameObject: {fileID: 8238885727883035795}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c9117b6d975111c47b064a4373cc67ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &658065520510829901
+--- !u!114 &5269096846316471592
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6186180465130882097}
+  m_GameObject: {fileID: 8238885727883035795}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
@@ -64,8 +64,8 @@ MonoBehaviour:
   layout:
     Size:
       X:
-        Raw: 0.71428573
-        Type: 0
+        Raw: 1
+        Type: 1
       Y:
         Raw: 1.0000001
         Type: 1
@@ -188,7 +188,7 @@ MonoBehaviour:
       Z: 0
     RotateSize: 0
     AspectRatio: {x: 0.7142858, y: 1, z: 0}
-    AspectRatioAxis: 2
+    AspectRatioAxis: 0
   autoLayout:
     Axis: 0
     Spacing:
@@ -216,7 +216,7 @@ MonoBehaviour:
   visibility:
     ZIndex: 0
     BlockType: 1
-    Visible: 1
+    Visible: 0
   surface:
     specularColor: {r: 1, g: 1, b: 1, a: 1}
     param1: 0.5
@@ -224,7 +224,7 @@ MonoBehaviour:
     LightingModel: 0
     ShadowCastingMode: 2
     ReceiveShadows: 1
-  PreviewSize: {x: 0.71428573, y: 0.9999999, z: 0}
+  PreviewSize: {x: 0, y: 0.9999999, z: 0}
   visuals:
     Color: {r: 0, g: 1, b: 0.85711694, a: 1}
     CornerRadius:
@@ -294,32 +294,26 @@ MonoBehaviour:
     FillEnabled: 1
   texture: {fileID: 0}
   sprite: {fileID: 0}
---- !u!114 &546137687463530484
+--- !u!114 &732490279678257411
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6186180465130882097}
-  m_Enabled: 1
+  m_GameObject: {fileID: 8238885727883035795}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f39caa1d729e584abff4fc06bef87e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Root: {fileID: 658065520510829901}
-  interactable: {fileID: 2346635572977669647}
-  hiddenScale: 0
-  normalScale: 0.75
-  hoverScale: 1
-  animationDuration: 0.3
---- !u!114 &2346635572977669647
+--- !u!114 &8985038985904580001
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6186180465130882097}
-  m_Enabled: 1
+  m_GameObject: {fileID: 8238885727883035795}
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bd0e5f112b0a05b43b4ba50233a47743, type: 3}
   m_Name: 
@@ -328,7 +322,7 @@ MonoBehaviour:
   DragThreshold: 1
   LowAccuracyDragThreshold: 30
   ClickBehavior: 1
-  navigable: 0
+  navigable: 1
   onSelect: 0
   autoSelect: 0
   Navigation:
