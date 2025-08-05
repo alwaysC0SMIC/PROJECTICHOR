@@ -423,6 +423,35 @@ public class UIElement : MonoBehaviour
                     }
                     break;
                 }
+                case TweenPreset.TweenType.NovaScale:
+                {
+                    UIBlock uiBlock = GetTargetUIBlock(overrideObj);
+                    if (uiBlock != null)
+                    {
+                        // Start from zero scale for intro Nova UI animations
+                        uiBlock.Size = new Nova.Length3(
+                            Nova.Length.Percentage(0f),
+                            Nova.Length.Percentage(0f),
+                            Nova.Length.Percentage(0f)
+                        );
+                    }
+                    break;
+                }
+                case TweenPreset.TweenType.NovaPosition:
+                {
+                    UIBlock uiBlock = GetTargetUIBlock(overrideObj);
+                    if (uiBlock != null)
+                    {
+                        // For NovaPosition intro animations, you may want to start from an off-screen position
+                        // This could be customized based on your needs - starting from center for now
+                        uiBlock.Layout.Position = new Nova.Length3(
+                            Nova.Length.Percentage(50f),
+                            Nova.Length.Percentage(50f),
+                            Nova.Length.Percentage(0f)
+                        );
+                    }
+                    break;
+                }
                 // For Move and Rotate, let the preset handle the initial state
                 case TweenPreset.TweenType.Move:
                 case TweenPreset.TweenType.Rotate:
@@ -444,6 +473,13 @@ public class UIElement : MonoBehaviour
         if (overrideObj is CanvasGroup cg) return cg;
         if (overrideObj is Component comp) return comp.GetComponent<CanvasGroup>();
         return GetComponent<CanvasGroup>();
+    }
+
+    private UIBlock GetTargetUIBlock(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is UIBlock ub) return ub;
+        if (overrideObj is Component comp) return comp.GetComponent<UIBlock>();
+        return GetComponent<UIBlock>();
     }
 
     private void AutoCacheComponents()
@@ -511,6 +547,20 @@ public class UIElement : MonoBehaviour
                 if (cg != null) return preset.ApplyTween(cg);
 
                 Debug.LogWarning($"[{name}] UIElement: Fade preset requires a CanvasGroup target (override or on this object). Skipping.");
+                return null;
+            }
+
+            case TweenPreset.TweenType.NovaScale:
+            case TweenPreset.TweenType.NovaPosition:
+            {
+                UIBlock uiBlock = null;
+                if (overrideObj is UIBlock ub) uiBlock = ub;
+                else if (overrideObj is Component compUb) uiBlock = compUb.GetComponent<UIBlock>();
+                else uiBlock = GetComponent<UIBlock>();
+
+                if (uiBlock != null) return preset.ApplyTween(uiBlock);
+
+                Debug.LogWarning($"[{name}] UIElement: {preset.tweenType} preset requires a UIBlock target (override or on this object). Skipping.");
                 return null;
             }
 

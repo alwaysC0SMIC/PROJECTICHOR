@@ -7,6 +7,7 @@ using Sirenix.OdinInspector;
 public class NovaHoverGuard : MonoBehaviour
 {
     public static int ActiveHoverCount { get; private set; }
+    public static bool IsBeingInteractedWith { get; private set; }
     
 #if UNITY_EDITOR
     private static string lastClickTime = "Never";
@@ -38,6 +39,10 @@ public class NovaHoverGuard : MonoBehaviour
     [DisplayAsString]
     private static string Debug_LastClickTime => lastClickTime;
 
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🎯 Being Interacted With")]
+    private static bool Debug_IsBeingInteractedWith => IsBeingInteractedWith;
+
     [BoxGroup("Debug Controls"), GUIColor(1f, 0.2f, 0.2f)]
     [Button(ButtonSizes.Large, Name = "Reset Hover Count", Icon = SdfIconType.XCircle)]
     private static void Debug_ResetHoverCount()
@@ -66,11 +71,19 @@ public class NovaHoverGuard : MonoBehaviour
         ActiveHoverCount = 0;
         lastClickTime = System.DateTime.Now.ToString("HH:mm:ss");
     }
+
+    [BoxGroup("Debug Controls"), GUIColor(0.8f, 0.3f, 1f)]
+    [Button(ButtonSizes.Medium, Name = "Reset Interaction", Icon = SdfIconType.XSquare)]
+    private static void Debug_ResetInteraction()
+    {
+        IsBeingInteractedWith = false;
+    }
 #endif
 
     private void Awake()
     {
-        _block = GetComponent<UIBlock>();
+        if (_block == null)
+            _block = GetComponent<UIBlock>();
         if (_block == null) return;
 
         _block.AddGestureHandler<Gesture.OnHover>(_ => {
@@ -81,6 +94,19 @@ public class NovaHoverGuard : MonoBehaviour
             ActiveHoverCount = Mathf.Max(0, ActiveHoverCount - 1);
         });
 
+        // Add press/drag handlers to track active interaction
+        _block.AddGestureHandler<Gesture.OnPress>(_ => {
+            IsBeingInteractedWith = true;
+        });
+
+        _block.AddGestureHandler<Gesture.OnRelease>(_ => {
+            IsBeingInteractedWith = false;
+        });
+
+        _block.AddGestureHandler<Gesture.OnDrag>(_ => {
+            IsBeingInteractedWith = true;
+        });
+
         // Add click handler to prevent stuck hover states
         _block.AddGestureHandler<Gesture.OnClick>(_ => {
 #if UNITY_EDITOR
@@ -88,8 +114,18 @@ public class NovaHoverGuard : MonoBehaviour
 #endif
             // Reset hover count when clicked to prevent stuck states
             ActiveHoverCount = 0;
+            IsBeingInteractedWith = false;
         });
     }
 
-    public static bool IsOverNovaUI => ActiveHoverCount > 0;
+    private void Update()
+    {
+        // Safety check: if mouse is up and we're still being interacted with, reset
+        if (IsBeingInteractedWith && !Input.GetMouseButton(0))
+        {
+            IsBeingInteractedWith = false;
+        }
+    }
+
+    public static bool IsOverNovaUI => ActiveHoverCount > 0 || IsBeingInteractedWith;
 }

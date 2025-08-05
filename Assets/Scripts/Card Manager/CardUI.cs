@@ -11,6 +11,7 @@ public class CardUI : MonoBehaviour
     //VARIABLES
     [SerializeField] private UIBlock Root;
     [SerializeField] private Interactable interactable;
+    //[SerializeField] private NovaHoverGuard hoverGuard;
 
     [SerializeField] private float hiddenScale = 0f;
     [SerializeField] private float normalScale = 0.8f;
@@ -50,8 +51,20 @@ public class CardUI : MonoBehaviour
 
     void Start()
     {
+        // // Add NovaHoverGuard if not already present
+        // if (hoverGuard == null)
+        // {
+        //     hoverGuard = Root.gameObject.GetComponent<NovaHoverGuard>();
+        //     if (hoverGuard == null)
+        //     {
+        //         hoverGuard = Root.gameObject.AddComponent<NovaHoverGuard>();
+        //     }
+        // }
+
         Root.AddGestureHandler<Gesture.OnHover>(OnHover);
         Root.AddGestureHandler<Gesture.OnUnhover>(OnUnHover);
+        // Add click handler to consume click events and prevent camera panning
+        Root.AddGestureHandler<Gesture.OnClick>(OnClick);
     }
 
     private void OnHover(Gesture.OnHover e)
@@ -64,6 +77,15 @@ public class CardUI : MonoBehaviour
     {
         // Scale down on unhover
         ScaleToTarget(normalScale, true);
+    }
+
+    private void OnClick(Gesture.OnClick e)
+    {
+        // Handle card click here
+        Debug.Log($"Card clicked: {gameObject.name}");
+        
+        // You can add card-specific click logic here
+        // The click event is now consumed and won't reach the camera system
     }
 
     public void ScaleToTarget(float targetScale, bool enableInteraction = false, bool disableWhenInactive = false, System.Action onComplete = null)
@@ -224,5 +246,17 @@ public class CardUI : MonoBehaviour
         }
     }
 
+    public void StopAllAnimations()
+    {
+        if (Root != null)
+        {
+            // Kill all DOTween animations on this Root's transform
+            DOTween.Kill(Root.transform);
+            
+            // Also kill any tweens that might be targeting this gameObject
+            DOTween.Kill(gameObject);
+            DOTween.Kill(Root);
+        }
+    }
 
 }

@@ -22,20 +22,25 @@ public class HandManager : MonoBehaviour
 
     private bool canScroll = false;
 
-
+    private bool CanScrollCards()
+    {
+        return wholeHand.Count > maxHandSize;
+    }
 
     [BoxGroup("Debug Controls")]
     [Button("Scroll Left", ButtonSizes.Medium)]
     private void TestScrollLeft()
     {
-        ScrollLeft();
+        if (CanScrollCards())
+            ScrollLeft();
     }
 
     [BoxGroup("Debug Controls")]
     [Button("Scroll Right", ButtonSizes.Medium)]
     private void TestScrollRight()
     {
-        ScrollRight();
+        if (CanScrollCards())
+            ScrollRight();
     }
 
 
@@ -50,11 +55,12 @@ public class HandManager : MonoBehaviour
         }
 
         InitializeHand();
+        HideCards();
     }
 
     void Update()
     {
-        if (canScroll)
+        if (canScroll && CanScrollCards())
         {
             float scrollInput = Input.GetAxis("Mouse ScrollWheel");
             
@@ -194,7 +200,7 @@ public class HandManager : MonoBehaviour
 
     public void ScrollLeft()
     {
-        if (!isScrolling)
+        if (!isScrolling && CanScrollCards())
         {
             StartCoroutine(ScrollLeftCoroutine());
         }
@@ -238,7 +244,7 @@ public class HandManager : MonoBehaviour
 
     public void ScrollRight()
     {
-        if (!isScrolling)
+        if (!isScrolling && CanScrollCards())
         {
             //MOVE 1st card in hierarchy to end of list
             StartCoroutine(ScrollRightCoroutine());
@@ -247,8 +253,6 @@ public class HandManager : MonoBehaviour
         //Next card in hierarchy after batch joins
 
     }
-
-    
 
     public void ChangeCardIndex(int oldIndex, int newIndex)
     {

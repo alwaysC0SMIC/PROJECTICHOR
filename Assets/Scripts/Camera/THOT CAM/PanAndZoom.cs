@@ -102,6 +102,10 @@ public class PanAndZoom : MonoBehaviour
     private bool Debug_OverNovaUI => NovaHoverGuard.IsOverNovaUI;
 
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("🎯 Nova Being Interacted")]
+    private bool Debug_NovaBeingInteracted => NovaHoverGuard.IsBeingInteractedWith;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
     [LabelText("📊 Nova Hover Count")]
     private int Debug_NovaHoverCount => NovaHoverGuard.ActiveHoverCount;
 
@@ -112,6 +116,7 @@ public class PanAndZoom : MonoBehaviour
         $"Enabled: {enabled} | " +
         $"AllowInput: {allowInput} | " +
         $"OverUI: {NovaHoverGuard.IsOverNovaUI} | " +
+        $"Interacting: {NovaHoverGuard.IsBeingInteractedWith} | " +
         $"HoverCount: {NovaHoverGuard.ActiveHoverCount} | " +
         $"Dragging: {isDragging}";
 
@@ -223,6 +228,10 @@ public class PanAndZoom : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+            // Double-check Nova UI state immediately on mouse down
+            if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith)
+                return;
+                
             touchStart = thisCamera.ScreenToWorldPoint(Input.mousePosition);
             touchStartScreen = Input.mousePosition;
             isDragging = false;
@@ -230,6 +239,13 @@ public class PanAndZoom : MonoBehaviour
 
         if (Input.GetMouseButton(0))
         {
+            // Continuously check if we should stop panning due to UI interaction
+            if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith)
+            {
+                isDragging = false;
+                return;
+            }
+
             if (!isDragging && (Input.mousePosition - touchStartScreen).magnitude > dragThreshold)
             {
                 isDragging = true;
@@ -278,7 +294,7 @@ public class PanAndZoom : MonoBehaviour
     private void HandleOrbitInput()
     {
         // Don't handle input if mouse is over UI or if a card is being dragged
-        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
+        if (NovaHoverGuard.IsOverNovaUI)
             return;
 
         // PC/Mac/WebGL: Right Mouse Drag

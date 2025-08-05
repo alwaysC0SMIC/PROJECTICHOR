@@ -12,13 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5173f48bfd400ff49bf87c8145f2e31e, type: 3}
   m_Name: MenuScaleTo1x
   m_EditorClassIdentifier: 
-  tweenType: 1
-  duration: 0.5
+  tweenType: 5
+  duration: 0.2
   ease: 9
   delay: 0
   loopType: 1
   loops: 0
   targetVector: {x: 1, y: 1, z: 1}
+  targetNovaScale: {x: 0, y: 1, z: 0}
+  targetNovaPosition: {x: 0, y: 0, z: 0}
   targetFloat: 1
   onCompleteUnityEvent:
     m_PersistentCalls:

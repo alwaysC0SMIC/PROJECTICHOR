@@ -2,23 +2,33 @@ using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
 using Sirenix.OdinInspector;
+using Nova;
 
 public class TweenTester : MonoBehaviour
 {
     [BoxGroup("Tween Settings"), Required]
     public TweenPreset tweenPreset;
 
-    [BoxGroup("Tween Settings"), ShowIf("@tweenPreset != null && tweenPreset.tweenType != TweenPreset.TweenType.Fade")]
+    [BoxGroup("Tween Settings"), ShowIf("@tweenPreset != null && tweenPreset.tweenType != TweenPreset.TweenType.Fade && tweenPreset.tweenType != TweenPreset.TweenType.NovaScale && tweenPreset.tweenType != TweenPreset.TweenType.NovaPosition")]
     public Transform targetTransform;
 
     [BoxGroup("Tween Settings"), ShowIf("@tweenPreset != null && tweenPreset.tweenType == TweenPreset.TweenType.Fade")]
     public CanvasGroup targetCanvasGroup;
+
+    [BoxGroup("Tween Settings"), ShowIf("@tweenPreset != null && (tweenPreset.tweenType == TweenPreset.TweenType.NovaScale || tweenPreset.tweenType == TweenPreset.TweenType.NovaPosition)")]
+    public UIBlock targetUIBlock;
 
     [BoxGroup("Runtime"), ReadOnly]
     public Vector3 originalPosition, originalScale, originalRotation;
 
     [BoxGroup("Runtime"), ReadOnly]
     public float originalAlpha;
+
+    [BoxGroup("Runtime"), ReadOnly]
+    public Vector3 originalNovaScale;
+
+    [BoxGroup("Runtime"), ReadOnly]
+    public Vector3 originalNovaPosition;
 
     private Tween currentTween;
 
@@ -42,6 +52,10 @@ public class TweenTester : MonoBehaviour
         if (tweenPreset.tweenType == TweenPreset.TweenType.Fade && targetCanvasGroup != null)
         {
             currentTween = tweenPreset.ApplyTween(targetCanvasGroup);
+        }
+        else if ((tweenPreset.tweenType == TweenPreset.TweenType.NovaScale || tweenPreset.tweenType == TweenPreset.TweenType.NovaPosition) && targetUIBlock != null)
+        {
+            currentTween = tweenPreset.ApplyTween(targetUIBlock);
         }
         else if (targetTransform != null)
         {
@@ -76,6 +90,29 @@ public class TweenTester : MonoBehaviour
         {
             targetCanvasGroup.alpha = originalAlpha;
         }
+
+        if (targetUIBlock != null)
+        {
+            // Reset Nova Scale if this was a scale tween
+            if (tweenPreset != null && tweenPreset.tweenType == TweenPreset.TweenType.NovaScale)
+            {
+                targetUIBlock.Size = new Nova.Length3(
+                    Nova.Length.Percentage(originalNovaScale.x),
+                    Nova.Length.Percentage(originalNovaScale.y),
+                    Nova.Length.Percentage(originalNovaScale.z)
+                );
+            }
+            
+            // Reset Nova Position if this was a position tween
+            if (tweenPreset != null && tweenPreset.tweenType == TweenPreset.TweenType.NovaPosition)
+            {
+                targetUIBlock.Layout.Position = new Nova.Length3(
+                    Nova.Length.Percentage(originalNovaPosition.x),
+                    Nova.Length.Percentage(originalNovaPosition.y),
+                    Nova.Length.Percentage(originalNovaPosition.z)
+                );
+            }
+        }
     }
 
     private void StoreOriginalState()
@@ -90,6 +127,25 @@ public class TweenTester : MonoBehaviour
         if (targetCanvasGroup != null)
         {
             originalAlpha = targetCanvasGroup.alpha;
+        }
+
+        if (targetUIBlock != null)
+        {
+            // Store Nova Scale values
+            var currentSize = targetUIBlock.Size;
+            originalNovaScale = new Vector3(
+                currentSize.X.Percent,
+                currentSize.Y.Percent,
+                currentSize.Z.Percent
+            );
+            
+            // Store Nova Position values
+            var currentPosition = targetUIBlock.Layout.Position;
+            originalNovaPosition = new Vector3(
+                currentPosition.X.Percent,
+                currentPosition.Y.Percent,
+                currentPosition.Z.Percent
+            );
         }
     }
 

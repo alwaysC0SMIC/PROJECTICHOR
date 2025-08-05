@@ -288,8 +288,16 @@ public class UIPageManager : MonoBehaviour
             
             // Use Transform target for tween types (Move, Scale, Rotate, Fade)
             Transform transformTarget = uiBlockTarget != null ? uiBlockTarget.transform : pageRoot.transform;
-            tween = targetTween.ApplyTween(transformTarget);
-            
+
+            if (targetTween.tweenType == TweenPreset.TweenType.NovaScale || targetTween.tweenType == TweenPreset.TweenType.NovaPosition)
+            {
+                tween = targetTween.ApplyTween(uiBlockTarget);
+            }
+            else
+            { 
+                tween = targetTween.ApplyTween(transformTarget);
+            }
+
             if (tween != null)
                 yield return tween.WaitForCompletion();
         }
