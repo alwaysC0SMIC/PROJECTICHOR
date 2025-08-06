@@ -1,8 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
-using NovaSamples.UIControls;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using Sirenix.OdinInspector;
 using DG.Tweening;
 
@@ -98,16 +98,8 @@ public class PanAndZoom : MonoBehaviour
     private bool Debug_IsOrbiting => isOrbiting;
 
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
-    [LabelText("🖥 Over Nova UI")]
-    private bool Debug_OverNovaUI => NovaHoverGuard.IsOverNovaUI;
-
-    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
-    [LabelText("🎯 Nova Being Interacted")]
-    private bool Debug_NovaBeingInteracted => NovaHoverGuard.IsBeingInteractedWith;
-
-    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
-    [LabelText("📊 Nova Hover Count")]
-    private int Debug_NovaHoverCount => NovaHoverGuard.ActiveHoverCount;
+    [LabelText(" Over Unity UI")]
+    private bool Debug_OverUnityUI => IsPointerOverUIElement();
 
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
     [LabelText("📊 Input State")]
@@ -115,10 +107,30 @@ public class PanAndZoom : MonoBehaviour
     private string Debug_InputState => 
         $"Enabled: {enabled} | " +
         $"AllowInput: {allowInput} | " +
-        $"OverUI: {NovaHoverGuard.IsOverNovaUI} | " +
-        $"Interacting: {NovaHoverGuard.IsBeingInteractedWith} | " +
-        $"HoverCount: {NovaHoverGuard.ActiveHoverCount} | " +
+        $"OverUnityUI: {IsPointerOverUIElement()} | " +
+        $"CardDragged: {CardHandManager.IsAnyCardBeingDragged} | " +
         $"Dragging: {isDragging}";
+
+    /// <summary>
+    /// Check if the pointer is over any Unity UI element
+    /// </summary>
+    private bool IsPointerOverUIElement()
+    {
+        // Check if EventSystem exists
+        if (EventSystem.current == null)
+            return false;
+
+        // Check if pointer is over UI element
+        return EventSystem.current.IsPointerOverGameObject();
+    }
+
+    /// <summary>
+    /// Check if camera input should be blocked due to UI interactions
+    /// </summary>
+    private bool ShouldBlockCameraInput()
+    {
+        return IsPointerOverUIElement();
+    }
 
     [BoxGroup("Debug Controls"), GUIColor(0.2f, 0.7f, 1f)]
     [Button(ButtonSizes.Large, Name = "Reset Camera", Icon = SdfIconType.Camera)]
@@ -161,16 +173,11 @@ public class PanAndZoom : MonoBehaviour
     }
 
     [BoxGroup("Debug Controls"), GUIColor(1f, 0.8f, 0.2f)]
-    [Button(ButtonSizes.Medium, Name = "Reset Nova Hover", Icon = SdfIconType.XCircle)]
-    private void Debug_ResetNovaHover()
+    [Button(ButtonSizes.Medium, Name = "Reset Unity UI Detection", Icon = SdfIconType.XCircle)]
+    private void Debug_ResetUnityUIDetection()
     {
-        // Force reset the Nova hover count by reflecting the private field
-        var field = typeof(NovaHoverGuard).GetField("ActiveHoverCount", 
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-        if (field != null)
-        {
-            field.SetValue(null, 0);
-        }
+        // Force a check of Unity UI state
+        Debug.Log($"Unity UI Detection - Over UI: {IsPointerOverUIElement()}");
     }
 #endif
 
@@ -188,13 +195,6 @@ public class PanAndZoom : MonoBehaviour
     {
         if (allowInput)
         {
-            // Auto-reset Nova hover state if it seems stuck
-            // If we're not over any UI but the count is still > 0, reset it
-            if (NovaHoverGuard.ActiveHoverCount > 0 && !Input.mousePresent)
-            {
-                ResetNovaHoverState();
-            }
-
             //INTERACTION WITH UI
             HandlePanInput();
             HandleOrbitInput();
@@ -202,34 +202,17 @@ public class PanAndZoom : MonoBehaviour
         }
     }
 
-    private void ResetNovaHoverState()
-    {
-        var field = typeof(NovaHoverGuard).GetField("ActiveHoverCount", 
-            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-        if (field != null)
-        {
-            field.SetValue(null, 0);
-        }
-    }
-
     // HANDLE PANNING INPUT (LEFT MOUSE OR SINGLE TOUCH)
     private void HandlePanInput()
     {
-        // Check for stuck Nova hover state and reset if needed
-        if (NovaHoverGuard.IsOverNovaUI && NovaHoverGuard.ActiveHoverCount > 3)
-        {
-            // If hover count is suspiciously high, reset it
-            ResetNovaHoverState();
-        }
-
         // Don't handle input if mouse is over UI or if a card is being dragged
-        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
+        if (ShouldBlockCameraInput())
             return;
 
         if (Input.GetMouseButtonDown(0))
         {
-            // Double-check Nova UI state immediately on mouse down
-            if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith)
+            // Double-check UI state immediately on mouse down
+            if (ShouldBlockCameraInput())
                 return;
                 
             touchStart = thisCamera.ScreenToWorldPoint(Input.mousePosition);
@@ -240,7 +223,7 @@ public class PanAndZoom : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
             // Continuously check if we should stop panning due to UI interaction
-            if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith)
+            if (ShouldBlockCameraInput())
             {
                 isDragging = false;
                 return;
@@ -294,7 +277,7 @@ public class PanAndZoom : MonoBehaviour
     private void HandleOrbitInput()
     {
         // Don't handle input if mouse is over UI or if a card is being dragged
-        if (NovaHoverGuard.IsOverNovaUI)
+        if (ShouldBlockCameraInput())
             return;
 
         // PC/Mac/WebGL: Right Mouse Drag
@@ -340,7 +323,7 @@ public class PanAndZoom : MonoBehaviour
     void Zoom(float increment)
     {
         // Don't handle zoom if mouse is over UI or if a card is being dragged
-        if (NovaHoverGuard.IsOverNovaUI || CardHandManager.IsAnyCardBeingDragged)
+        if (ShouldBlockCameraInput())
             return;
 
         Camera.main.orthographicSize = Mathf.Clamp(Camera.main.orthographicSize - increment, zoomOutMin, zoomOutMax);

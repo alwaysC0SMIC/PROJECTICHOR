@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6730992935577647588}
   - component: {fileID: 7695097941109187587}
   - component: {fileID: 867522494204533920}
+  - component: {fileID: 3387298567153447664}
   m_Layer: 0
   m_Name: Hexagon
   m_TagString: Untagged
@@ -32,7 +33,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.25, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 2}
-  m_ConstrainProportionsScale: 1
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -673,3 +674,30 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!114 &3387298567153447664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8020958886200797073}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 498699c894dc46349a9d4b2c1e310120, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  coordinates:
+    q: 0
+    r: 0
+  hexType: 0
+  laneId: -1
+  isJunctionPoint: 0
+  laneColor: {r: 1, g: 1, b: 1, a: 1}
+  centerHubMaterial: {fileID: 2100000, guid: 6fc28e0ec4ee91e40979873125cd0545, type: 2}
+  pathwayMaterial: {fileID: 2100000, guid: 7193e62cea08b67429866bf886781c47, type: 2}
+  defenderSpotMaterial: {fileID: 2100000, guid: 7c3ee8bf75fbf8f429ecee9de6e7049f, type: 2}
+  edgeSpawnMaterial: {fileID: 2100000, guid: 3e8816e370ec38441b606f878e6a2f1d, type: 2}
+  environmentMaterial: {fileID: 0}
+  useLaneColorTint: 1
+  buildableLayerName: Buildable
+  hoverScaleMultiplier: 5

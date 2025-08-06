@@ -867,6 +867,12 @@ public class HexEnvironmentManager : MonoBehaviour
         return hexData?.gameObject;
     }
     
+    public HexTile GetHexTileAt(HexCoordinates coord)
+    {
+        var hexGameObject = GetHexGameObjectAt(coord);
+        return hexGameObject?.GetComponent<HexTile>();
+    }
+    
     public List<HexData> GetHexesOfType(HexType type)
     {
         return hexGrid.Values.Where(hex => hex.type == type).ToList();
@@ -1859,9 +1865,17 @@ public class HexEnvironmentManager : MonoBehaviour
         return best;
     }
     
-    private float HexDistance(HexCoordinates a, HexCoordinates b)
+    /// <summary>
+    /// Calculate the distance between two hex coordinates
+    /// </summary>
+    public static float GetHexDistance(HexCoordinates a, HexCoordinates b)
     {
         return (Mathf.Abs(a.q - b.q) + Mathf.Abs(a.q + a.r - b.q - b.r) + Mathf.Abs(a.r - b.r)) / 2f;
+    }
+    
+    private float HexDistance(HexCoordinates a, HexCoordinates b)
+    {
+        return GetHexDistance(a, b);
     }
     
     private void GenerateDefenderSpots()
@@ -1970,27 +1984,37 @@ public class HexEnvironmentManager : MonoBehaviour
             var hexData = kvp.Value;
             
             Vector3 worldPos = HexToWorldPosition(coord);
-            GameObject prefabToUse = GetPrefabForHexType(hexData.type);
             
-            if (prefabToUse != null)
+            // Only instantiate the hexPrefab - HexTile component will handle behavior
+            GameObject hexGO = Instantiate(hexPrefab, worldPos, Quaternion.identity, hexParent);
+            hexGO.name = $"Hex_{coord}_{hexData.type}";
+            hexData.gameObject = hexGO;
+            
+            // Get the HexTile component (should already be on the prefab)
+            HexTile hexTile = hexGO.GetComponent<HexTile>();
+            if (hexTile != null)
             {
-                GameObject hexGO = Instantiate(prefabToUse, worldPos, Quaternion.identity, hexParent);
-                hexGO.name = $"Hex_{coord}_{hexData.type}";
-                hexData.gameObject = hexGO;
+                // Get lane color if this hex is part of a lane
+                Color hexColor = Color.white;
+                if (hexData.laneId >= 0 && hexData.laneId < laneConfigurations.Count)
+                {
+                    hexColor = laneConfigurations[hexData.laneId].laneColor;
+                }
+                
+                // Initialize the HexTile component with all the data
+                hexTile.Initialize(
+                    coord, 
+                    hexData.type, 
+                    hexData.laneId, 
+                    hexData.isJunctionPoint, 
+                    hexColor
+                );
+            }
+            else
+            {
+                Debug.LogWarning($"[HexEnvironmentManager] HexTile component not found on hex prefab for {coord}_{hexData.type}");
             }
         }
-    }
-    
-    private GameObject GetPrefabForHexType(HexType type)
-    {
-        return type switch
-        {
-            HexType.CenterHub => centerHubPrefab ?? hexPrefab,
-            HexType.Pathway => pathwayPrefab ?? hexPrefab,
-            HexType.DefenderSpot => defenderSpotPrefab ?? hexPrefab,
-            HexType.EdgeSpawn => edgeSpawnPrefab ?? hexPrefab,
-            _ => hexPrefab
-        };
     }
     
     private HexCoordinates FindClosestHexInDirection(HexCoordinates from, Vector3 worldDirection)

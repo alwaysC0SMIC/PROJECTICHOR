@@ -63,7 +63,7 @@ public class HandManager : MonoBehaviour
         if (canScroll && CanScrollCards())
         {
             float scrollInput = Input.GetAxis("Mouse ScrollWheel");
-            
+
             if (scrollInput > 0f)
             {
                 // Scroll up - trigger scroll left
@@ -143,7 +143,7 @@ public class HandManager : MonoBehaviour
     }
 
     public void EnableHandCards()
-    { 
+    {
         //ENABLE HAND CARDS
         for (int i = 0; i < wholeHand.Count; i++)
         {
@@ -161,7 +161,7 @@ public class HandManager : MonoBehaviour
     }
 
     public void ActiveCheckForHand()
-    { 
+    {
         //ENABLE HAND CARDS
         for (int i = 0; i < wholeHand.Count; i++)
         {
@@ -178,7 +178,7 @@ public class HandManager : MonoBehaviour
 
     public void Scroll(Gesture.OnScroll gesture)
     {
-        
+
 
         // Handle scroll events here
         Debug.Log("SCROLLING: " + gesture.ScrollDeltaLocalSpace);
@@ -212,8 +212,8 @@ public class HandManager : MonoBehaviour
 
         //LOWEST CARD IN BATCH IN HIERARCHY GETS DISABLED
         ChangeCardIndex(wholeHand.Count - 1, 0);
-            wholeHand[0].SetActive(true);
-            wholeHand[0].GetComponent<CardUI>().ScaleUp();
+        wholeHand[0].SetActive(true);
+        wholeHand[0].GetComponent<CardUI>().ScaleUp();
         wholeHand[maxHandSize].GetComponent<CardUI>().ScaleDown();
         yield return StartCoroutine(wholeHand[wholeHand.Count - 1].GetComponent<CardUI>().ScaleDownCoroutine(() =>
         {
@@ -226,18 +226,18 @@ public class HandManager : MonoBehaviour
     private IEnumerator ScrollRightCoroutine()
     {
         isScrolling = true;
-        
+
         //LOWEST CARD IN BATCH IN HIERARCHY GETS DISABLED
         wholeHand[maxHandSize].SetActive(true);
         wholeHand[maxHandSize].GetComponent<CardUI>().ScaleUp();
-            
+
         yield return StartCoroutine(wholeHand[0].GetComponent<CardUI>().ScaleDownCoroutine(() =>
         {
             //wholeHand[maxHandSize - 1].GetComponent<CardUI>().ScaleDown();
             ChangeCardIndex(0, wholeHand.Count - 1);
 
         }));
-        
+
         //ActiveCheckForHand();
         isScrolling = false;
     }
@@ -265,5 +265,5 @@ public class HandManager : MonoBehaviour
             wholeHand[i].transform.SetSiblingIndex(i);
         }
     }
-    
+
 }

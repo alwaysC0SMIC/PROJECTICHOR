@@ -34,8 +34,19 @@ public struct ResetCameraEvent : IEvent
 
 public struct UpdateUIStyleEvent : IEvent { }
 
-public struct UpdateUIPageEvent : IEvent {
+public struct UpdateUIPageEvent : IEvent
+{
     public Enum_UIMenuPage uiPage;
+}
+
+
+#endregion
+
+#region BUILDING EVENTS
+
+public struct BuildingEvent : IEvent
+{
+    public bool isBuilding;
 }
 
 #endregion
