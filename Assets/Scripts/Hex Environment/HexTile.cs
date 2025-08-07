@@ -7,7 +7,7 @@ using Sirenix.OdinInspector;
 /// </summary>
 public class HexTile : MonoBehaviour, IInteractable
 {
-    //VARIABLES
+    #region VARIABLES
 
     [TitleGroup("Hex Data")]
     [LabelText("🗺️ Coordinates")]
@@ -66,12 +66,34 @@ public class HexTile : MonoBehaviour, IInteractable
     [SerializeField] private string buildableLayerName = "Buildable";
 
     [TitleGroup("Hover Effects")]
-    [LabelText("📈 Hover Scale Multiplier")]
-    [Tooltip("Scale multiplier applied to Y axis when hovering over buildable tiles")]
-    [SerializeField] private float hoverScaleMultiplier = 1.1f;
+    [LabelText("📈 Hover Y Offset")]
+    [Tooltip("Y position offset applied when hovering over buildable tiles")]
+    [SerializeField] private float hoverYOffset = 0.1f;
 
-    // Store original scale for hover effect
-    private Vector3 originalScale; 
+    // Store original position and scale for hover effect
+    private Vector3 originalPosition;
+    private Vector3 originalScale;
+
+    #endregion
+
+    private bool isOccupied = false;
+
+    [SerializeField] GameObject previewObject;
+    [SerializeField] GameObject buildObject;
+
+
+    void Start()
+    {
+        previewObject.SetActive(false);
+        buildObject.SetActive(false);
+    }
+
+    public void AttemptBuild()
+    {
+        buildObject.SetActive(true);
+        isOccupied = true;
+
+    }
 
     public void Initialize(HexCoordinates coords, HexType type, int lane = -1, bool junction = false, Color color = default)
     {
@@ -81,7 +103,8 @@ public class HexTile : MonoBehaviour, IInteractable
         isJunctionPoint = junction;
         laneColor = color == default ? Color.white : color;
 
-        // Store original scale for hover effects
+        // Store original position and scale for hover effects
+        originalPosition = transform.position;
         originalScale = transform.localScale;
 
         // Set the GameObject name for better hierarchy organization
@@ -298,32 +321,35 @@ public class HexTile : MonoBehaviour, IInteractable
     public void OnHover()
     {
         // Apply hover effect only to buildable tiles (DefenderSpots)
-        if (hexType == HexType.DefenderSpot)
+        if (hexType == HexType.DefenderSpot && !isOccupied)
         {
-            // Ensure we have the original scale stored
-            if (originalScale == Vector3.zero)
-                originalScale = transform.localScale;
-                
-            Vector3 hoverScale = originalScale;
-            hoverScale.y *= hoverScaleMultiplier;
-            transform.localScale = hoverScale;
-            
-            Debug.Log($"[HexTile] Hovering over buildable hex {coordinates} - Scale increased to {hoverScale.y:F2}");
+            // Ensure we have the original position stored
+            if (originalPosition == Vector3.zero)
+                originalPosition = transform.position;
+
+            Vector3 hoverPosition = originalPosition;
+            hoverPosition.y += hoverYOffset;
+            transform.position = hoverPosition;
+
+            Debug.Log($"[HexTile] Hovering over buildable hex {coordinates} - Position raised to Y: {hoverPosition.y:F2}");
+            previewObject.SetActive(true);
         }
     }
 
     public void OnHoverExit()
     {
-        // Reset scale for buildable tiles
+        // Reset position for buildable tiles
         if (hexType == HexType.DefenderSpot)
         {
-            // Ensure we have the original scale stored
-            if (originalScale == Vector3.zero)
-                originalScale = new Vector3(1, 1, 1); // Default scale fallback
-                
-            transform.localScale = originalScale;
-            
-            Debug.Log($"[HexTile] Stopped hovering over buildable hex {coordinates} - Scale reset to {originalScale.y:F2}");
+            // Ensure we have the original position stored
+            if (originalPosition == Vector3.zero)
+                originalPosition = transform.position - new Vector3(0, hoverYOffset, 0); // Estimate original if not stored
+
+            transform.position = originalPosition;
+
+            Debug.Log($"[HexTile] Stopped hovering over buildable hex {coordinates} - Position reset to Y: {originalPosition.y:F2}");
+
+            previewObject.SetActive(false);
         }
     }
 

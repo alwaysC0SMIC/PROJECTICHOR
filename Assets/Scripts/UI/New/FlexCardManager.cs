@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Flexalon;
 using Microsoft.Unity.VisualStudio.Editor;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -24,11 +26,64 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
     // Visible window tracking
     private int currentStartIndex = 0;
 
+    [SerializeField] public FlexalonObject flexalonObject;
+
+    // Event binding for BuildingEvent
+    private EventBinding<BuildingEvent> buildingEventBinding;
+    private bool canInteract = true;
+
     void Start()
     {
-        maxHandSize = handSize + 2;
+        //TEMP
+        //maxHandSize = handSize + 2;
+        maxHandSize = handSize;
+
+        // Initialize in unhovered state
+        UnHoverAnimation();
+
+        // Register for building events
+        buildingEventBinding = new EventBinding<BuildingEvent>(OnBuildingEvent);
+        EventBus<BuildingEvent>.Register(buildingEventBinding);
+
         GenerateHand();
         UpdateVisibleCards();
+    }
+
+    void OnDestroy()
+    {
+        // Unregister from building events
+        if (buildingEventBinding != null)
+        {
+            EventBus<BuildingEvent>.Deregister(buildingEventBinding);
+            buildingEventBinding = null;
+        }
+    }
+
+    private void OnBuildingEvent(BuildingEvent buildingEvent)
+    {
+        // If building mode is activated, hide the cards
+        if (buildingEvent.isBuilding)
+        {
+            canInteract = false;
+            UnHoverAnimation();
+            Debug.Log("[FlexCardManager] Build mode activated - hiding cards");
+        }
+        else
+        { 
+            canInteract = true;
+        }
+        // Note: We don't auto-show cards when build mode ends, 
+        // let the user hover to show them again
+    }
+
+    private void UnHoverAnimation()
+    {
+        flexalonObject.Offset = new Vector3(0, -250F, 0);
+    }
+
+    private void HoverAnimation()
+    {
+        flexalonObject.Offset = Vector3.zero;
     }
 
     public void GenerateHand()
@@ -203,14 +258,18 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if(!canInteract) return;
         canScroll = true;
-        Debug.Log("[FlexCardManager] Pointer entered - scrolling enabled");
+        HoverAnimation();
+        Debug.Log("[FlexCardManager] Pointer entered - scrolling enabled and hover animation triggered");
     }
 
     // IPointerExitHandler implementation
     public void OnPointerExit(PointerEventData eventData)
     {
+        if(!canInteract) return;
         canScroll = false;
-        Debug.Log("[FlexCardManager] Pointer exited - scrolling disabled");
+        UnHoverAnimation();
+        Debug.Log("[FlexCardManager] Pointer exited - scrolling disabled and unhover animation triggered");
     }
 }

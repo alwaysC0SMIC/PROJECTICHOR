@@ -75,7 +75,13 @@ public class Builder : MonoBehaviour
             if (lastLoggedHexTile != null)
             {
                 lastLoggedHexTile.OnHoverExit();
+
+
+                //ATTEMPT BUILD
+                //if(lastLoggedHexTile.y)
+                lastLoggedHexTile.AttemptBuild();
             }
+
             lastLoggedHexTile = null;
         }
     }

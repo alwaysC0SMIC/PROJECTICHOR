@@ -105,14 +105,5 @@ public class Interactor : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Get the currently hovered hex tile (only valid when in build mode)
-    /// </summary>
-    /// <returns>The currently hovered HexTile, or null if none</returns>
-    public HexTile GetCurrentHoveredHexTile()
-    {
-        return currentHoveredHexTile;
-    }
-
 
 }

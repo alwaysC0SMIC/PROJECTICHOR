@@ -49,6 +49,7 @@ public struct BuildingEvent : IEvent
     public bool isBuilding;
 }
 
+
 #endregion
 
 #region AUDIO
