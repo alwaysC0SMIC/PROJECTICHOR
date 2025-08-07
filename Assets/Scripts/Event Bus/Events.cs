@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 public interface IEvent {}
 
@@ -42,6 +43,10 @@ public struct UpdateUIPageEvent : IEvent
 
 #endregion
 
+public struct EnvironmentGeneratedEvent : IEvent
+{
+}
+
 #region BUILDING EVENTS
 
 public struct BuildingEvent : IEvent
@@ -49,6 +54,10 @@ public struct BuildingEvent : IEvent
     public bool isBuilding;
 }
 
+public struct PathwayTransformsEvent : IEvent
+{
+    public List<List<Transform>> pathwayTransformsByLane;
+}
 
 #endregion
 
