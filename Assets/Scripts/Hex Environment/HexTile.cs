@@ -92,7 +92,11 @@ public class HexTile : MonoBehaviour, IInteractable
     {
         buildObject.SetActive(true);
         isOccupied = true;
-
+        
+        //HEIGHT
+        Vector3 hoverPosition = originalPosition;
+            hoverPosition.y += hoverYOffset;
+            transform.position = hoverPosition;
     }
 
     public void Initialize(HexCoordinates coords, HexType type, int lane = -1, bool junction = false, Color color = default)
@@ -331,7 +335,7 @@ public class HexTile : MonoBehaviour, IInteractable
             hoverPosition.y += hoverYOffset;
             transform.position = hoverPosition;
 
-            Debug.Log($"[HexTile] Hovering over buildable hex {coordinates} - Position raised to Y: {hoverPosition.y:F2}");
+            //Debug.Log($"[HexTile] Hovering over buildable hex {coordinates} - Position raised to Y: {hoverPosition.y:F2}");
             previewObject.SetActive(true);
         }
     }
@@ -347,7 +351,7 @@ public class HexTile : MonoBehaviour, IInteractable
 
             transform.position = originalPosition;
 
-            Debug.Log($"[HexTile] Stopped hovering over buildable hex {coordinates} - Position reset to Y: {originalPosition.y:F2}");
+            //Debug.Log($"[HexTile] Stopped hovering over buildable hex {coordinates} - Position reset to Y: {originalPosition.y:F2}");
 
             previewObject.SetActive(false);
         }
@@ -355,16 +359,16 @@ public class HexTile : MonoBehaviour, IInteractable
 
     public void OnClick()
     {
-        Debug.Log($"[HexTile] Clicked on hex {coordinates} (Type: {hexType})");
+        //Debug.Log($"[HexTile] Clicked on hex {coordinates} (Type: {hexType})");
 
         // Additional click logic can be added here if needed
         if (hexType == HexType.DefenderSpot)
         {
-            Debug.Log($"[HexTile] Clicked on defender spot - could place building here!");
+            //Debug.Log($"[HexTile] Clicked on defender spot - could place building here!");
         }
         else
         { 
-            Debug.Log($"[HexTile] Invalid Build");
+            //Debug.Log($"[HexTile] Invalid Build");
         }
     }
 
