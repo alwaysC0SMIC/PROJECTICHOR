@@ -79,6 +79,7 @@ public class PanAndZoom : MonoBehaviour
     [BoxGroup("Reset")]
     [LabelText("Reset Duration")]
     [SerializeField] public float resetDuration = 0.5f;
+    
 
 #if UNITY_EDITOR
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]

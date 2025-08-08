@@ -490,7 +490,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 76a2ea281e96e8941af3573cb48aec52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1190,7 +1190,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.7088992, g: 0.054022435, b: 0.427806, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7088992, g: 0.054022416, b: 0.42780596, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -9796,7 +9796,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.15240107, g: 0.11497419, b: 0.8932729, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.15240103, g: 0.11497416, b: 0.8932729, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -10770,7 +10770,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.7088992, g: 0.054022435, b: 0.427806, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7088992, g: 0.054022416, b: 0.42780596, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -13004,7 +13004,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.76755583, g: 0.81771886, b: 0.24806786, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7675558, g: 0.81771886, b: 0.24806783, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -14329,8 +14329,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 11
   m_Type: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 2
+  m_Color: {r: 0.41720903, g: 0.39999998, b: 1, a: 1}
+  m_Intensity: 0.75
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -14372,9 +14372,9 @@ Light:
   m_Lightmapping: 4
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
+  m_BounceIntensity: 0
   m_ColorTemperature: 5000
-  m_UseColorTemperature: 1
+  m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
@@ -14393,7 +14393,7 @@ Transform:
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 2.15, y: 8.12, z: -3.72}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22485,6 +22485,127 @@ Transform:
   - {fileID: 1010964819}
   m_Father: {fileID: 1173240410}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &572867192
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 572867195}
+  - component: {fileID: 572867194}
+  - component: {fileID: 572867193}
+  m_Layer: 12
+  m_Name: Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &572867193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 572867192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 3
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_RenderingLayers: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_ShadowRenderingLayers: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+--- !u!108 &572867194
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 572867192}
+  m_Enabled: 1
+  serializedVersion: 11
+  m_Type: 2
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Intensity: 61.21
+  m_Range: 4
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize: 10
+  m_Shadows:
+    m_Type: 2
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 4.9, y: 1}
+  m_BounceIntensity: 0
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!4 &572867195
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 572867192}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -1.46, y: 0.59, z: 4.01}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1 &575483676
 GameObject:
   m_ObjectHideFlags: 0
@@ -26488,7 +26609,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.7088992, g: 0.054022435, b: 0.427806, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7088992, g: 0.054022416, b: 0.42780596, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -30183,7 +30304,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.15240107, g: 0.11497419, b: 0.8932729, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.15240103, g: 0.11497416, b: 0.8932729, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -31290,7 +31411,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.7088992, g: 0.054022435, b: 0.427806, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7088992, g: 0.054022416, b: 0.42780596, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -33498,7 +33619,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c22777d6e868e4f2fb421913386b154e, type: 2}
+  - {fileID: 2100000, guid: 76a2ea281e96e8941af3573cb48aec52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -44464,7 +44585,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.15240107, g: 0.11497419, b: 0.8932729, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.15240103, g: 0.11497416, b: 0.8932729, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -62398,7 +62519,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.76755583, g: 0.81771886, b: 0.24806786, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7675558, g: 0.81771886, b: 0.24806783, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -67991,7 +68112,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.7088992, g: 0.054022435, b: 0.427806, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7088992, g: 0.054022416, b: 0.42780596, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -68112,7 +68233,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.76755583, g: 0.81771886, b: 0.24806786, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7675558, g: 0.81771886, b: 0.24806783, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -69257,7 +69378,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.76755583, g: 0.81771886, b: 0.24806786, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7675558, g: 0.81771886, b: 0.24806783, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -77773,7 +77894,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.15240107, g: 0.11497419, b: 0.8932729, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.15240103, g: 0.11497416, b: 0.8932729, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -78700,7 +78821,7 @@ GameObject:
   - component: {fileID: 1829203405}
   - component: {fileID: 1829203404}
   - component: {fileID: 1829203408}
-  m_Layer: 7
+  m_Layer: 11
   m_Name: Centre Tower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -78751,7 +78872,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 536f60e82c7474ae5837d096ada1ae09, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -82639,7 +82760,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.15240107, g: 0.11497419, b: 0.8932729, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.15240103, g: 0.11497416, b: 0.8932729, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -89063,7 +89184,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.76755583, g: 0.81771886, b: 0.24806786, a: 1}
-    - _Color: {r: 0.4811321, g: 0.353968, b: 0.21106261, a: 1}
+    - _Color: {r: 0.7675558, g: 0.81771886, b: 0.24806783, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -90459,12 +90580,112 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_ClearFlags
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
       propertyPath: near clip plane
-      value: -5
+      value: -25
       objectReference: {fileID: 0}
     - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
       propertyPath: orthographic size
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_OcclusionCulling
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0.3018868
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0.046200592
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 453457705411112591, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 3991
+      objectReference: {fileID: 0}
+    - target: {fileID: 1402775272499980295, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: orthographic
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1402775272499980295, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: near clip plane
+      value: 0.01
+      objectReference: {fileID: 0}
+    - target: {fileID: 1402775272499980295, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: orthographic size
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1402775272499980295, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_OcclusionCulling
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_StopNaN
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_Dithering
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_Antialiasing
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_RenderShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_RenderPostProcessing
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1585077611214312086, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_VolumeLayerMask.m_Bits
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2406307992611132099, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2406307992611132099, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: near clip plane
+      value: -25
+      objectReference: {fileID: 0}
+    - target: {fileID: 2406307992611132099, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_OcclusionCulling
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2543428031319243159, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_CullingMask.m_Bits
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3202459318650544449, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6805107027123572265, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6805107027123572265, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6805107027123572265, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6805107027123572265, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -90485,6 +90706,30 @@ PrefabInstance:
     - target: {fileID: 8245231198392738396, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
       propertyPath: m_Name
       value: CAMERA
+      objectReference: {fileID: 0}
+    - target: {fileID: 8630415439273635572, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8630415439273635572, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8630415439273635572, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8742117821402038192, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_ClearDepth
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8742117821402038192, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_RenderShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8742117821402038192, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
+      propertyPath: m_RenderPostProcessing
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8830483866749535976, guid: 7875e34fdb57eff478e00d76be1c509d, type: 3}
       propertyPath: m_LocalPosition.x
@@ -90615,3 +90860,4 @@ SceneRoots:
   - {fileID: 920746426}
   - {fileID: 1333685561}
   - {fileID: 786662062}
+  - {fileID: 572867195}
