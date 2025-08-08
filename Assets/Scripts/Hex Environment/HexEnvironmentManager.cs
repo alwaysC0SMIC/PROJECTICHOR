@@ -501,8 +501,6 @@ public class HexEnvironmentManager : MonoBehaviour
 
     public void GenerateTowerDefenseEnvironment()
     {
-
-
         ClearExistingHexes();
         InitializeLaneConfigurations();
 
@@ -952,7 +950,7 @@ public class HexEnvironmentManager : MonoBehaviour
             var laneCoords = generatedLanes[laneId];
             var laneTransforms = pathwayTransformsByLane[laneId];
             
-            // Sort transforms based on their order in the lane coordinates
+            // Sort transforms based on their order in the lane coordinates (including the new buffer tile)
             var sortedTransforms = laneTransforms
                 .OrderBy(transform => {
                     // Find the hex coordinate for this transform
@@ -1082,10 +1080,10 @@ public class HexEnvironmentManager : MonoBehaviour
             
             pathwayTransformsByLane[laneId] = finalTransformList;
             
-            // Enhanced debug logging showing the complete waypoint structure
-            string waypointStructure = $"Lane {laneId} waypoint structure: ";
+            // Enhanced debug logging showing the complete waypoint structure with buffer tile
+            string waypointStructure = $"Lane {laneId} extended waypoint structure: ";
             if (edgeSpawnerTransform != null) waypointStructure += "EdgeSpawn → ";
-            waypointStructure += $"{sortedTransforms.Count} Pathways";
+            waypointStructure += $"{sortedTransforms.Count} Pathways (including buffer tile)";
             if (centerHubTransform != null) waypointStructure += " → CenterHub (FINAL)";
             
             Debug.Log($"[HexEnvironmentManager] {waypointStructure} | Total: {finalTransformList.Count} waypoints");
@@ -2116,7 +2114,9 @@ public class HexEnvironmentManager : MonoBehaviour
     {
         laneSpawnPoints.Clear();
         
-        // For each lane, create a new edge spawn hex connected to the first hex of the lane
+        // For each lane, create an extended edge spawn system:
+        // EdgeSpawn → BufferTile(Pathway) → OriginalFirstPathHex → ... → CenterHub
+        // This gives enemies more time to move before being in range of defender tiles
         for (int laneIndex = 0; laneIndex < generatedLanes.Count; laneIndex++)
         {
             var lane = generatedLanes[laneIndex];
@@ -2125,24 +2125,46 @@ public class HexEnvironmentManager : MonoBehaviour
             // Get the first hex of this lane (the starting edge hex)
             HexCoordinates firstHex = lane[0];
             
-            // Find the best direction to place the edge spawn (away from center)
-            HexCoordinates edgeSpawnCoord = FindBestEdgeSpawnPosition(firstHex);
+            // Find the best direction to place the buffer tile (away from center)
+            HexCoordinates bufferPosition = FindBestEdgeSpawnPosition(firstHex);
             
-            if (edgeSpawnCoord != HexCoordinates.Zero)
+            if (bufferPosition != HexCoordinates.Zero)
             {
-                // Create a new hex data for the edge spawn
-                HexData edgeSpawnData = new HexData(edgeSpawnCoord, HexType.EdgeSpawn);
-                edgeSpawnData.laneId = laneIndex;
+                // Create an additional edge spawn tile even further out
+                HexCoordinates edgeSpawnCoord = FindBestEdgeSpawnPosition(bufferPosition);
                 
-                // Add to hex grid (this extends beyond the original grid radius)
-                hexGrid[edgeSpawnCoord] = edgeSpawnData;
-                laneSpawnPoints.Add(edgeSpawnCoord);
-                
-                //Debug.Log($"[HexEnvironmentManager] Created edge spawn at {edgeSpawnCoord} for lane {laneIndex}, connected to first hex {firstHex}");
+                if (edgeSpawnCoord != HexCoordinates.Zero)
+                {
+                    // Create hex data for the buffer tile (pathway type) - this extends the lane
+                    HexData bufferData = new HexData(bufferPosition, HexType.Pathway);
+                    bufferData.laneId = laneIndex;
+                    hexGrid[bufferPosition] = bufferData;
+                    
+                    // Add buffer position to the lane (at the beginning) - this extends the pathway
+                    generatedLanes[laneIndex].Insert(0, bufferPosition);
+                    
+                    // Create hex data for the edge spawn (spawn type) - enemies start here
+                    HexData edgeSpawnData = new HexData(edgeSpawnCoord, HexType.EdgeSpawn);
+                    edgeSpawnData.laneId = laneIndex;
+                    hexGrid[edgeSpawnCoord] = edgeSpawnData;
+                    laneSpawnPoints.Add(edgeSpawnCoord);
+                    
+                    Debug.Log($"[HexEnvironmentManager] Extended lane {laneIndex}: Spawn at {edgeSpawnCoord} → Buffer at {bufferPosition} → First path at {firstHex}");
+                }
+                else
+                {
+                    // Fallback: use the original position as edge spawn if we can't extend further
+                    HexData edgeSpawnData = new HexData(bufferPosition, HexType.EdgeSpawn);
+                    edgeSpawnData.laneId = laneIndex;
+                    hexGrid[bufferPosition] = edgeSpawnData;
+                    laneSpawnPoints.Add(bufferPosition);
+                    
+                    Debug.Log($"[HexEnvironmentManager] Fallback for lane {laneIndex}: Spawn at {bufferPosition} → First path at {firstHex}");
+                }
             }
         }
         
-        //Debug.Log($"[HexEnvironmentManager] Generated {laneSpawnPoints.Count} edge spawn points");
+        Debug.Log($"[HexEnvironmentManager] Generated {laneSpawnPoints.Count} extended edge spawn points with buffer tiles");
     }
     
     private HexCoordinates FindBestEdgeSpawnPosition(HexCoordinates firstHex)
