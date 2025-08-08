@@ -92,7 +92,6 @@ public class HexData
     public GameObject gameObject;
     public int laneId = -1; // Which lane this hex belongs to (-1 = no lane)
     public bool isJunctionPoint = false; // Where lanes merge
-    public float height = 0f; // Height displacement for terrain
     
     public HexData(HexCoordinates coords, HexType hexType)
     {
@@ -419,78 +418,6 @@ public class HexEnvironmentManager : MonoBehaviour
     [SerializeField, Tooltip("Show only specific lane (0-5, -1 = all)"), Range(-1, 5)]
     private int showOnlyLane = -1;
     
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Environment Expansion")]
-    [SerializeField, Range(1, 10), Tooltip("Number of additional environment rings around the main grid")]
-    private int additionalEnvironmentRings = 2;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Generation")]
-    [SerializeField, Tooltip("Enable terrain height generation using Perlin noise")]
-    private bool enableTerrainGeneration = true;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Generation")]
-    [SerializeField, Range(0.01f, 0.5f), Tooltip("Scale factor for Perlin noise sampling")]
-    private float noiseScale = 0.1f;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Generation")]
-    [SerializeField, Range(0f, 0.5f), Tooltip("Maximum height variation in world units (0.5 max)")]
-    private float maxHeightVariation = 0.5f;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Generation")]
-    [SerializeField, Range(0f, 2f), Tooltip("Height contour step (0.5 recommended for smooth connections)")]
-    private float heightContour = 0.5f;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Smoothing")]
-    [SerializeField, Range(1, 5), Tooltip("Number of smoothing passes to ensure connected heights")]
-    private int heightSmoothingPasses = 3;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Height Smoothing")]
-    [SerializeField, Range(0.5f, 2f), Tooltip("Maximum height difference between adjacent hexes")]
-    private float maxHeightDifference = 0.5f;
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Generation Actions")]
-    [Button(ButtonSizes.Medium, Name = "🌄 Generate Terrain")]
-    [GUIColor(0.6f, 0.9f, 0.6f)]
-    private void GenerateTerrainButtonPressed()
-    {
-        if (enableTerrainGeneration)
-        {
-            GenerateTerrainHeights();
-            // Clear existing objects and recreate with new heights
-            if (hexPrefab != null && !gizmosOnlyMode)
-            {
-                ClearExistingHexGameObjects();
-                InstantiateHexGameObjects();
-            }
-        }
-    }
-    
-    [TabGroup("Terrain", "🏔️ Terrain Generation")]
-    [TitleGroup("Terrain/Generation Actions")]
-    [Button(ButtonSizes.Medium, Name = "🗻 Add Environment Rings")]
-    [GUIColor(0.6f, 0.6f, 0.9f)]
-    private void AddEnvironmentRingsButtonPressed()
-    {
-        AddAdditionalEnvironmentRings();
-        if (enableTerrainGeneration)
-        {
-            GenerateTerrainHeights();
-        }
-        // Clear existing objects and recreate with new heights and additional rings
-        if (hexPrefab != null && !gizmosOnlyMode)
-        {
-            ClearExistingHexGameObjects();
-            InstantiateHexGameObjects();
-        }
-    }
-    
     // Runtime data
     private Dictionary<HexCoordinates, HexData> hexGrid = new Dictionary<HexCoordinates, HexData>();
     private List<HexCoordinates> generatedCoordinates = new List<HexCoordinates>();
@@ -621,23 +548,9 @@ public class HexEnvironmentManager : MonoBehaviour
         if (generateEdgeSpawns)
             GenerateEdgeSpawnPoints();
 
-        // Step 5: Add additional environment rings around the main grid
-        if (additionalEnvironmentRings > 0)
-        {
-            AddAdditionalEnvironmentRings();
-        }
-
-        // Step 6: Generate terrain heights with Perlin noise for existing environment tiles
-        if (enableTerrainGeneration)
-        {
-            GenerateTerrainHeights();
-        }
-
-        // Step 7: Instantiate GameObjects (only if not in gizmos-only mode and prefab exists)
+        // Step 5: Instantiate GameObjects (only if not in gizmos-only mode and prefab exists)
         if (canInstantiateObjects)
         {
-            // Clear any existing objects first to prevent duplicates
-            ClearExistingHexGameObjects();
             InstantiateHexGameObjects();
         }
 
@@ -941,30 +854,6 @@ public class HexEnvironmentManager : MonoBehaviour
         generatedCoordinates.Clear();
         generatedLanes.Clear();
         laneSpawnPoints.Clear();
-        
-        // Destroy existing hex objects
-        if (hexParent != null)
-        {
-            for (int i = hexParent.childCount - 1; i >= 0; i--)
-            {
-                if (Application.isPlaying)
-                    Destroy(hexParent.GetChild(i).gameObject);
-                else
-                    DestroyImmediate(hexParent.GetChild(i).gameObject);
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Clears only the instantiated GameObjects while preserving hex data for terrain regeneration
-    /// </summary>
-    private void ClearExistingHexGameObjects()
-    {
-        // Clear GameObject references from hex data
-        foreach (var kvp in hexGrid)
-        {
-            kvp.Value.gameObject = null;
-        }
         
         // Destroy existing hex objects
         if (hexParent != null)
@@ -2251,9 +2140,6 @@ public class HexEnvironmentManager : MonoBehaviour
             
             Vector3 worldPos = HexToWorldPosition(coord);
             
-            // Apply height displacement for terrain
-            worldPos.y += hexData.height;
-            
             // Only instantiate the hexPrefab - HexTile component will handle behavior
             GameObject hexGO = Instantiate(hexPrefab, worldPos, Quaternion.identity, hexParent);
             hexGO.name = $"Hex_{coord}_{hexData.type}";
@@ -2352,157 +2238,6 @@ public class HexEnvironmentManager : MonoBehaviour
         }
         
         return alternatives;
-    }
-    
-    #endregion
-    
-    #region Terrain Generation
-    
-    /// <summary>
-    /// Adds additional environment rings around the main grid for expanded terrain
-    /// </summary>
-    private void AddAdditionalEnvironmentRings()
-    {
-        int totalRings = gridRadius + additionalEnvironmentRings;
-        
-        // Generate additional rings beyond the main grid
-        for (int ring = gridRadius + 1; ring <= totalRings; ring++)
-        {
-            List<HexCoordinates> ringCoords = GetHexRing(HexCoordinates.Zero, ring);
-            
-            foreach (var coord in ringCoords)
-            {
-                // Only add if not already in grid (avoid duplicates)
-                if (!hexGrid.ContainsKey(coord))
-                {
-                    HexData hexData = new HexData(coord, HexType.Environment);
-                    hexGrid[coord] = hexData;
-                    generatedCoordinates.Add(coord);
-                }
-            }
-        }
-        
-        Debug.Log($"[HexEnvironmentManager] Added {additionalEnvironmentRings} additional environment rings, total hexes: {hexGrid.Count}");
-    }
-    
-    /// <summary>
-    /// Generates terrain heights using Perlin noise for non-gameplay tiles (excludes pathways, center hub, and edge spawns)
-    /// </summary>
-    private void GenerateTerrainHeights()
-    {
-        Debug.Log("[HexEnvironmentManager] Generating terrain heights for non-gameplay hex tiles...");
-        
-        // Step 1: Generate raw Perlin noise heights for non-gameplay hexes
-        GenerateRawHeights();
-        
-        // Step 2: Apply height smoothing to ensure connected terrain while keeping gameplay elements at ground level
-        ApplyHeightSmoothing();
-        
-        int nonGameplayTileCount = hexGrid.Values.Count(h => h.type != HexType.Pathway && h.type != HexType.CenterHub && h.type != HexType.EdgeSpawn);
-        Debug.Log($"[HexEnvironmentManager] Terrain height generation completed for {nonGameplayTileCount} non-gameplay hex tiles");
-    }
-    
-    /// <summary>
-    /// Generates initial height values using Perlin noise for all tile types except lanes and spawns
-    /// </summary>
-    private void GenerateRawHeights()
-    {
-        foreach (var kvp in hexGrid)
-        {
-            var hexData = kvp.Value;
-            
-            // Skip lanes (pathways and center hub) and edge spawns - keep them at ground level
-            if (hexData.type == HexType.Pathway || hexData.type == HexType.CenterHub || hexData.type == HexType.EdgeSpawn)
-            {
-                hexData.height = 0f;
-                continue;
-            }
-            
-            Vector3 worldPos = HexToWorldPosition(hexData.coordinates);
-            
-            // Generate Perlin noise value (0-1 range)
-            float noiseValue = Mathf.PerlinNoise(
-                worldPos.x * noiseScale, 
-                worldPos.z * noiseScale
-            );
-            
-            // Convert to height range 0 to maxHeightVariation (0.5 max)
-            float rawHeight = noiseValue * maxHeightVariation;
-            
-            // Ensure height is clamped between 0 and 0.5
-            rawHeight = Mathf.Clamp(rawHeight, 0f, 0.5f);
-            
-            hexData.height = SnapToHeightContour(rawHeight);
-        }
-    }
-    
-    /// <summary>
-    /// Applies smoothing passes to ensure hexes are properly connected, while keeping lanes and spawns at ground level
-    /// </summary>
-    private void ApplyHeightSmoothing()
-    {
-        for (int pass = 0; pass < heightSmoothingPasses; pass++)
-        {
-            Dictionary<HexCoordinates, float> newHeights = new Dictionary<HexCoordinates, float>();
-            
-            foreach (var kvp in hexGrid)
-            {
-                var hexData = kvp.Value;
-                
-                // Keep lanes (pathways and center hub) and edge spawns at ground level
-                if (hexData.type == HexType.Pathway || hexData.type == HexType.CenterHub || hexData.type == HexType.EdgeSpawn)
-                {
-                    newHeights[hexData.coordinates] = 0f;
-                    continue;
-                }
-                
-                float currentHeight = hexData.height;
-                float maxAllowedHeight = currentHeight;
-                float minAllowedHeight = currentHeight;
-                
-                // Check all adjacent hexes
-                foreach (var direction in HEX_DIRECTIONS)
-                {
-                    HexCoordinates adjacent = new HexCoordinates(
-                        hexData.coordinates.q + direction.q,
-                        hexData.coordinates.r + direction.r
-                    );
-                    
-                    if (hexGrid.ContainsKey(adjacent))
-                    {
-                        float adjacentHeight = hexGrid[adjacent].height;
-                        
-                        // Ensure height difference doesn't exceed maximum
-                        maxAllowedHeight = Mathf.Min(maxAllowedHeight, adjacentHeight + maxHeightDifference);
-                        minAllowedHeight = Mathf.Max(minAllowedHeight, adjacentHeight - maxHeightDifference);
-                    }
-                }
-                
-                // Clamp height to allowed range and ensure it stays within 0-0.5
-                float smoothedHeight = Mathf.Clamp(currentHeight, minAllowedHeight, maxAllowedHeight);
-                smoothedHeight = Mathf.Clamp(smoothedHeight, 0f, 0.5f);
-                newHeights[hexData.coordinates] = SnapToHeightContour(smoothedHeight);
-            }
-            
-            // Apply new heights
-            foreach (var kvp in newHeights)
-            {
-                if (hexGrid.ContainsKey(kvp.Key))
-                {
-                    hexGrid[kvp.Key].height = kvp.Value;
-                }
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Snaps a height value to the defined height contour
-    /// </summary>
-    private float SnapToHeightContour(float height)
-    {
-        if (heightContour <= 0f) return height;
-        
-        return Mathf.Round(height / heightContour) * heightContour;
     }
     
     #endregion
@@ -2606,11 +2341,8 @@ public class HexEnvironmentManager : MonoBehaviour
                 
                 Vector3 pos = HexToWorldPosition(coord);
                 
-                // Apply height displacement for terrain visualization
-                pos.y += hexData.height;
-                
                 // Get enhanced color for hex type - ensure solid color
-                Color hexColor = GetEnhancedColorForHexType(hexData.type, hexData.laneId, hexData.height);
+                Color hexColor = GetEnhancedColorForHexType(hexData.type, hexData.laneId);
                 hexColor.a = gizmoAlpha;
                 Gizmos.color = hexColor;
                 
@@ -2734,20 +2466,16 @@ public class HexEnvironmentManager : MonoBehaviour
         }
     }
     
-    private Color GetEnhancedColorForHexType(HexType type, int laneId = -1, float height = 0f)
+    private Color GetEnhancedColorForHexType(HexType type, int laneId = -1)
     {
-        Color baseColor = type switch
+        return type switch
         {
             HexType.CenterHub => centerHubColor,
             HexType.Pathway => GetLaneColor(laneId),
             HexType.DefenderSpot => defenderSpotColor,
             HexType.EdgeSpawn => edgeSpawnColor,
-            HexType.Environment => environmentColor,
             _ => environmentColor
         };
-        
-        // Apply height-based color modification to all tile types
-        return ApplyHeightColorModification(baseColor, height);
     }
     
     private Color GetLaneColor(int laneId)
@@ -2760,48 +2488,6 @@ public class HexEnvironmentManager : MonoBehaviour
         // Fallback rainbow colors for lanes without configuration
         float hue = (laneId * 0.618f) % 1f; // Golden ratio for even distribution
         return Color.HSVToRGB(hue, 0.8f, 1f);
-    }
-    
-    /// <summary>
-    /// Applies height-based color modification to any tile type for better terrain visualization
-    /// </summary>
-    private Color ApplyHeightColorModification(Color baseColor, float height)
-    {
-        if (maxHeightVariation <= 0f)
-        {
-            return baseColor;
-        }
-        
-        // Normalize height to 0-1 range
-        float normalizedHeight = Mathf.Clamp01(height / maxHeightVariation);
-        
-        // Create height-based color gradient: darken for low areas, brighten for high areas
-        Color heightModifiedColor = Color.Lerp(baseColor * 0.7f, baseColor * 1.3f, normalizedHeight);
-        
-        // Preserve alpha channel
-        heightModifiedColor.a = baseColor.a;
-        
-        return heightModifiedColor;
-    }
-    
-    /// <summary>
-    /// Gets environment color based on height for better terrain visualization
-    /// </summary>
-    private Color GetEnvironmentColorByHeight(float height)
-    {
-        if (maxHeightVariation <= 0f)
-        {
-            return environmentColor;
-        }
-        
-        // Normalize height to 0-1 range
-        float normalizedHeight = Mathf.Clamp01(height / maxHeightVariation);
-        
-        // Create height-based color gradient from dark to light
-        Color baseColor = environmentColor;
-        Color heightColor = Color.Lerp(baseColor * 0.6f, Color.white, normalizedHeight * 0.4f);
-        
-        return heightColor;
     }
     
     private string GetHexTypeLabel(HexType type, int laneId)

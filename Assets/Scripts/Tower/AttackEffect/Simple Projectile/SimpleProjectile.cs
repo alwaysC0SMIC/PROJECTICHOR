@@ -21,14 +21,13 @@ public class SimpleProjectile : MonoBehaviour, ITarget
 
     void Update()
     {
+        // Move projectile towards target
         if (attackTravel && target != null)
         {
             MoveTowardsTarget();
-        } else if (attackTravel && target == null)
-        {
-            DestroyProjectile();
         }
         
+        // Check for collisions with enemies while projectile is traveling
         if (attackTravel)
         {
             CheckForEnemyCollisions();
@@ -39,13 +38,14 @@ public class SimpleProjectile : MonoBehaviour, ITarget
     {
         // Move towards target position
         transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * GameTime.DeltaTime);
-
+        
         // Check if we've reached the target
         if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
         {
             // Reached target without hitting enemy
             if (attackTravel)
             {
+                Debug.Log("[SimpleProjectile] Reached target, destroying projectile");
                 DestroyProjectile();
             }
         }
@@ -53,6 +53,7 @@ public class SimpleProjectile : MonoBehaviour, ITarget
     
     private void CheckForEnemyCollisions()
     {
+        // Use OverlapSphere to check for enemies within collision radius
         Collider[] enemiesInRange = Physics.OverlapSphere(transform.position, collisionRadius, enemyLayerMask);
         
         foreach (Collider enemyCollider in enemiesInRange)
@@ -63,7 +64,7 @@ public class SimpleProjectile : MonoBehaviour, ITarget
                 if (enemy != null)
                 {
                     OnHitEnemy(enemy);
-                    return; 
+                    return; // Exit after hitting first enemy
                 }
             }
         }
@@ -94,6 +95,7 @@ public class SimpleProjectile : MonoBehaviour, ITarget
 
         if (target != null)
         {
+            // Add Y offset to target position to aim slightly higher
             targetPosition = target.position + Vector3.up * yOffset;
             moveDirection = (targetPosition - transform.position).normalized;
             

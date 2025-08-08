@@ -8,9 +8,6 @@ public class EnemyManager : MonoBehaviour
     private EventBinding<EnvironmentGeneratedEvent> environmentGeneratedBinding;
     // Store pathway transforms when received
     public List<List<Transform>> pathwayTransformsByLane;
-    
-    // Store all spawned enemies for cleanup
-    private List<GameObject> spawnedEnemies = new List<GameObject>();
 
     [SerializeField] private GameObject testEnemyPrefab;
     
@@ -44,9 +41,6 @@ public class EnemyManager : MonoBehaviour
 
     public void Initialize()
     {
-        // Clear existing enemies when environment is regenerated
-        ClearAllEnemies();
-        
         // Request pathway transforms from HexEnvironmentManager
         RequestPathwayTransforms();
     }
@@ -88,15 +82,12 @@ public class EnemyManager : MonoBehaviour
         
         GameObject enemyObj = Instantiate(enemyPrefab, spawnPosition, spawnRotation, transform);
         
-        // Add to spawned enemies list for tracking
-        spawnedEnemies.Add(enemyObj);
-        
         // Initialize the enemy with the pathway
         Enemy enemy = enemyObj.GetComponent<Enemy>();
         if (enemy != null)
         {
             enemy.InitializeWithWaypoints(pathTransforms);
-            Debug.Log($"[EnemyManager] Spawned enemy on lane {laneId} at edge spawner position {spawnPosition}. Total enemies: {spawnedEnemies.Count}");
+            Debug.Log($"[EnemyManager] Spawned enemy on lane {laneId} at edge spawner position {spawnPosition}");
         }
         else
         {
@@ -121,7 +112,7 @@ public class EnemyManager : MonoBehaviour
             }
         }
         
-        Debug.Log($"[EnemyManager] Spawned {spawnedEnemies.Count} enemies across {pathwayTransformsByLane.Count} lanes. Total active enemies: {GetActiveEnemyCount()}");
+        Debug.Log($"[EnemyManager] Spawned {spawnedEnemies.Count} enemies across {pathwayTransformsByLane.Count} lanes");
         return spawnedEnemies;
     }
 
@@ -208,70 +199,11 @@ public class EnemyManager : MonoBehaviour
     {
         return pathwayTransformsByLane;
     }
-    
-    /// <summary>
-    /// Clear all spawned enemies when environment is regenerated
-    /// </summary>
-    public void ClearAllEnemies()
-    {
-        // Destroy all spawned enemies
-        for (int i = spawnedEnemies.Count - 1; i >= 0; i--)
-        {
-            if (spawnedEnemies[i] != null)
-            {
-                Destroy(spawnedEnemies[i]);
-            }
-        }
-        
-        // Clear the list
-        spawnedEnemies.Clear();
-        
-        Debug.Log("[EnemyManager] Cleared all spawned enemies");
-    }
-    
-    /// <summary>
-    /// Remove a specific enemy from the tracking list (called when enemy is destroyed naturally)
-    /// </summary>
-    public void RemoveEnemyFromList(GameObject enemy)
-    {
-        spawnedEnemies.Remove(enemy);
-    }
-    
-    /// <summary>
-    /// Get the current number of active enemies
-    /// </summary>
-    public int GetActiveEnemyCount()
-    {
-        // Clean up null references first
-        spawnedEnemies.RemoveAll(enemy => enemy == null);
-        return spawnedEnemies.Count;
-    }
-    
-    /// <summary>
-    /// Get all currently spawned enemies
-    /// </summary>
-    public List<GameObject> GetAllSpawnedEnemies()
-    {
-        // Clean up null references first
-        spawnedEnemies.RemoveAll(enemy => enemy == null);
-        return new List<GameObject>(spawnedEnemies);
-    }
 
     // Update is called once per frame
     void Update()
     {
-        // Periodically clean up null references from destroyed enemies
-        if (Time.frameCount % 60 == 0) // Check every 60 frames (~1 second at 60fps)
-        {
-            int beforeCount = spawnedEnemies.Count;
-            spawnedEnemies.RemoveAll(enemy => enemy == null);
-            int afterCount = spawnedEnemies.Count;
-            
-            if (beforeCount != afterCount)
-            {
-                Debug.Log($"[EnemyManager] Cleaned up {beforeCount - afterCount} destroyed enemies. Active enemies: {afterCount}");
-            }
-        }
+        
     }
     
     #region Gizmos
