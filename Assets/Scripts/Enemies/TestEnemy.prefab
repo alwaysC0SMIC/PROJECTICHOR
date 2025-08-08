@@ -98,8 +98,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cf8d9e92c230ba4ab7912a89e942805, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attackRange: 4
+  attackRange: 1.5
   targetOffset: 1.3
+  angleDeviation: 30
 --- !u!65 &2022615960703857017
 BoxCollider:
   m_ObjectHideFlags: 0

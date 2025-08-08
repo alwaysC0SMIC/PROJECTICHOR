@@ -197,15 +197,9 @@ public class EnemyAttack : MonoBehaviour
         if (target == null) return;
 
         Tower tower = target.GetComponent<Tower>();
-        if (tower != null && tower.currentHealth > 0)
+        if (tower != null)
         {
-            // Deal damage to tower
-            tower.currentHealth -= attackDamage;
-            tower.currentHealth = Mathf.Max(0, tower.currentHealth);
-            
-            Debug.Log($"Enemy attacked tower! Tower health: {tower.currentHealth}");
-            
-            // Add attack effects here if needed
+            tower.TakeDamage(attackDamage);
         }
     }
 
@@ -256,7 +250,7 @@ public class EnemyAttack : MonoBehaviour
         isAttackingCentreHub = false;
         movingToCentreHubPosition = false;
         canAttack = false;
-        Debug.Log("Enemy stopped attacking center hub!");
+        //Debug.Log("Enemy stopped attacking center hub!");
     }
 
     private void CentreHubAttackSequence()
@@ -281,7 +275,7 @@ public class EnemyAttack : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Draw attack range
+        // Draw attack search range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
         
@@ -307,5 +301,16 @@ public class EnemyAttack : MonoBehaviour
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(transform.position, Vector3.zero);
         }
+    }
+    
+    void OnDrawGizmos()
+    {
+        // Always draw attack search range (even when not selected) for better visibility
+        Gizmos.color = new Color(1f, 0f, 0f, 0.2f); // Semi-transparent red
+        Gizmos.DrawSphere(transform.position, attackRange);
+        
+        // Draw wireframe for better definition
+        Gizmos.color = new Color(1f, 0f, 0f, 0.5f); // More opaque red
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 }

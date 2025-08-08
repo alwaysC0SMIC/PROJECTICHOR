@@ -497,6 +497,8 @@ public class HexEnvironmentManager : MonoBehaviour
 
     #region Public Methods
 
+    
+
     public void GenerateTowerDefenseEnvironment()
     {
 
@@ -562,7 +564,7 @@ public class HexEnvironmentManager : MonoBehaviour
         {
             RequestPathwayTransforms();
         }
-        
+
         EventBus<EnvironmentGeneratedEvent>.Raise(new EnvironmentGeneratedEvent
         {
 

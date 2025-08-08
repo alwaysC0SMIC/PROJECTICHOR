@@ -58,7 +58,7 @@ public class EnemyManager : MonoBehaviour
         while (true)
         {
             // Wait 5 seconds before spawning next enemy
-            yield return new WaitForSeconds(5f);
+            yield return new WaitForSeconds(0.5f);
             
             // Only spawn if we have waypoints available
             if (waypoints.Count > 0 && enemyDataList.Count > 0)

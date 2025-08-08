@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Test Enemy
   maxhealth: 100
-  speed: 2
+  speed: 0.5
   damage: 10
-  attackRange: 2
+  attackRange: 1.5
   attackRate: 1
   attackEffectPrefab: {fileID: 0}

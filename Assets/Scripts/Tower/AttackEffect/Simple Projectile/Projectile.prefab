@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 0}
-  damage: 100
+  damage: 50
   speed: 10
   collisionRadius: 0.1
   yOffset: 0.5

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using DG.Tweening;
 
 public class Tower : MonoBehaviour
@@ -19,11 +20,29 @@ public class Tower : MonoBehaviour
     private Sequence rotationSequence;
     private Transform currentTarget;
     private bool isRotating = false;
+    //private bool isDead = false;
+    
+    // Optimization: Track enemies in range
+    private List<Transform> enemiesInRange = new List<Transform>();
 
-    //FOR OPTOMIZATION MIGHT MAKE SENSE TO USE ACTUAL COLLIDER TRIGGER AND LOOK FOR ONENTER
+    [SerializeField] LayerMask enemyLayerMask;
+
+    void Start()
+    {
+        // Set up health
+        currentHealth = maxhealth;
+    }
+
+    // Using overlap sphere for enemy detection instead of collider triggers for better performance control
     void Update()
     {
-        // Find and prioritize targets
+        // Skip everything if tower is dead
+        //if (isDead) return;
+        
+        // Update enemies in range using overlap sphere
+        UpdateEnemiesInRange();
+        
+        // Find and prioritize targets from enemies in range
         FindAndPrioritizeTarget();
         
         // Continuously rotate towards current target
@@ -39,44 +58,89 @@ public class Tower : MonoBehaviour
             nextAttackTime = Time.time + attackRate;
         }
     }
+
+    private void UpdateEnemiesInRange()
+    {
+        // Clear the current list
+        enemiesInRange.Clear();
+        
+        // Use overlap sphere to detect enemies
+        Collider[] colliders = Physics.OverlapSphere(transform.position, attackRange, enemyLayerMask);
+        
+        // Add valid enemy transforms to the list
+        foreach (Collider col in colliders)
+        {
+            if (col != null && col.transform != null)
+            {
+                enemiesInRange.Add(col.transform);
+            }
+        }
+    }
     
     private void FindAndPrioritizeTarget()
     {
-        Collider[] enemiesInRange = Physics.OverlapSphere(transform.position, attackRange);
+        // Clean up null references (destroyed enemies)
+        enemiesInRange.RemoveAll(enemy => enemy == null);
         
         Transform bestTarget = null;
         float furthestProgress = -1f;
         
-        foreach (Collider enemy in enemiesInRange)
+        foreach (Transform enemy in enemiesInRange)
         {
-            if (enemy.CompareTag("Enemy"))
+            if (enemy != null)
             {
                 // Get the enemy's path progress
-                Enemy enemyScript = enemy.GetComponent<Enemy>();
-                if (enemyScript != null)
+                FollowWP followWP = enemy.GetComponent<FollowWP>();
+                if (followWP != null)
                 {
-                    //float progress = enemyScript.GetPathProgress(); // Assuming this method exists
+                    float progress = followWP.GetPathProgress(); // Get progress along path
                     
                     // Prioritize enemy furthest along the path
-                    // if (progress > furthestProgress)
-                    // {
-                    //     furthestProgress = progress;
-                    //     bestTarget = enemy.transform;
-                    // }
+                    if (progress > furthestProgress)
+                    {
+                        furthestProgress = progress;
+                        bestTarget = enemy;
+                    }
                 }
                 else
                 {
-                    // Fallback: if no Enemy script, use distance as priority (closer = further along path assumption)
-                    float distanceToTower = Vector3.Distance(transform.position, enemy.transform.position);
-                    if (bestTarget == null || distanceToTower < Vector3.Distance(transform.position, bestTarget.position))
+                    // Fallback: if no FollowWP script, use distance as priority (closer = further along path assumption)
+                    if (bestTarget == null)
                     {
-                        bestTarget = enemy.transform;
+                        bestTarget = enemy;
                     }
                 }
             }
         }
         
         currentTarget = bestTarget;
+    }
+    
+    // Method to take damage
+    public void TakeDamage(float damageAmount)
+    {
+        //if (isDead) return;
+        
+        currentHealth -= damageAmount;
+        currentHealth = Mathf.Max(0, currentHealth);
+        
+        //Debug.Log($"Tower took {damageAmount} damage. Health: {currentHealth}/{maxhealth}");
+        
+        // Check if tower should die
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+    
+    // Method to handle tower death
+    private void Die()
+    {
+        
+
+        rotationSequence.Kill();
+        currentTarget = null;
+        gameObject.SetActive(false);
     }
 
     private void Attack(Transform target)
@@ -91,18 +155,11 @@ public class Tower : MonoBehaviour
             
             GameObject projectileObj = Instantiate(attackEffectPrefab, attackPoint.position, attackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();
+            attack?.SetTarget(target, damage);
             projectileObj.transform.localScale = Vector3.one; // Ensure projectile is visible    
 
+            
 
-            if (attack != null)
-            {
-                attack.SetTarget(target);
-                Debug.Log($"[Tower] Projectile spawned successfully: {projectileObj.name}");
-            }
-            else
-            {
-                Debug.LogError($"[Tower] Failed to get ITarget component from {projectileObj.name}");
-            }
         }
         else
         {
@@ -112,11 +169,11 @@ public class Tower : MonoBehaviour
     
     private void FaceTarget(Transform target)
     {
-        // Calculate direction to target
-        Vector3 direction = (target.position - transform.position).normalized;
         
-        // Only rotate on Y axis to keep tower upright
-        direction.y = 0;
+        // Calculate direction to target (only Y axis rotation)
+        Vector3 direction = (target.position - transform.position);
+        direction.y = 0; // Keep tower upright, only rotate on Y axis
+        direction = direction.normalized;
         
         // Create rotation looking towards target
         if (direction != Vector3.zero)

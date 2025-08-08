@@ -5,8 +5,7 @@ public abstract class AttackEffect : MonoBehaviour, ITarget
 {
     [SerializeField] public Transform target;
     public bool isInitialized = false;
-
-    
+    public float damageAmount = 100f; // Default damage amount
 
     // public void InitializeAttack(Transform inTarget)
     // {
@@ -16,9 +15,10 @@ public abstract class AttackEffect : MonoBehaviour, ITarget
 
     public abstract void AttackStart();
 
-    public void SetTarget(Transform target)
+    public void SetTarget(Transform intarget, float indamageAmount = 100)
     {
-        target = target;
+        damageAmount = indamageAmount;
+        target = intarget;
         isInitialized = true;
     }
 }

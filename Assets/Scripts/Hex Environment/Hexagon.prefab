@@ -1044,12 +1044,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxhealth: 100
   currentHealth: 100
-  damage: 100
+  damage: 50
   attackRange: 2.6
   attackRate: 1
   attackEffectPrefab: {fileID: 5403709900032079272, guid: 0d876df26ec88724996a98461e137490, type: 3}
   attackPoint: {fileID: 6205398788549195230}
   rotationSpeed: 2
+  enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!65 &1300362496968013691
 BoxCollider:
   m_ObjectHideFlags: 0

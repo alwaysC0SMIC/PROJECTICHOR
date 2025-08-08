@@ -88,8 +88,24 @@ public class SimpleProjectile : MonoBehaviour, ITarget
         Destroy(gameObject); 
     }
 
-    public void SetTarget(Transform intarget)
+    // public void SetTarget(Transform intarget)
+    // {
+    //     target = intarget;
+    //     attackTravel = true;
+
+    //     if (target != null)
+    //     {
+    //         // Add Y offset to target position to aim slightly higher
+    //         targetPosition = target.position + Vector3.up * yOffset;
+    //         moveDirection = (targetPosition - transform.position).normalized;
+            
+    //     }
+    // }
+
+    public void SetTarget(Transform intarget, float damageAmount = 100)
     {
+        //throw new System.NotImplementedException();
+        damage = damageAmount;
         target = intarget;
         attackTravel = true;
 
