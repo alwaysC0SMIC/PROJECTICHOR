@@ -11,8 +11,9 @@ GameObject:
   - component: {fileID: 7380780121066206611}
   - component: {fileID: 3722498164645683730}
   - component: {fileID: 8432625821184802073}
+  - component: {fileID: 7943101354066393480}
+  - component: {fileID: 8823139980815738268}
   - component: {fileID: 2022615960703857017}
-  - component: {fileID: 8593394454556459671}
   m_Layer: 9
   m_Name: TestEnemy
   m_TagString: Enemy
@@ -48,14 +49,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f723fb68ad4fa83459684bddb66a0135, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waypoints: []
-  speed: 0.3
-  rotSpeed: 6
-  allowMovement: 1
-  waypointReachDistance: 0.1
-  randomizationRadius: 0.5
-  useRandomization: 1
-  showDebugInfo: 1
+  enemyData: {fileID: 11400000, guid: 034d3e75b15ee264387398f1a763be61, type: 2}
+  state: 0
+  health: {fileID: 8432625821184802073}
+  followWP: {fileID: 7943101354066393480}
+  attack: {fileID: 8823139980815738268}
 --- !u!114 &8432625821184802073
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,10 +67,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
-  currentHealth: 0
-  deathEffect: {fileID: 0}
-  destroyOnDeath: 1
-  showDebugInfo: 0
+  currentHealth: 100
+--- !u!114 &7943101354066393480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6142048736492526578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07b95cd688edb284fb32a9a9baa64e0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveNormally: 0
+  waypoints: []
+  currentWP: 0
+  speed: 10
+  rotSpeed: 30
+  waypointReachDistance: 0.25
+--- !u!114 &8823139980815738268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6142048736492526578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cf8d9e92c230ba4ab7912a89e942805, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 20
+  targetOffset: 1
 --- !u!65 &2022615960703857017
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -94,33 +121,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.25, y: 0.5, z: 0.25}
   m_Center: {x: 0, y: 0.5, z: 0}
---- !u!54 &8593394454556459671
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6142048736492526578}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 126
-  m_CollisionDetection: 0
 --- !u!1 &8314339556126161875
 GameObject:
   m_ObjectHideFlags: 0

@@ -952,7 +952,8 @@ GameObject:
   - component: {fileID: 4624112462492005669}
   - component: {fileID: 8937906654234279112}
   - component: {fileID: 8219796405013255238}
-  m_Layer: 0
+  - component: {fileID: 1300362496968013691}
+  m_Layer: 10
   m_Name: Tower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1041,10 +1042,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c70d30191869d9c49aaef409ad88ecd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
+  maxhealth: 100
+  currentHealth: 100
   damage: 100
   attackRange: 2.6
   attackRate: 1
   attackEffectPrefab: {fileID: 5403709900032079272, guid: 0d876df26ec88724996a98461e137490, type: 3}
   attackPoint: {fileID: 6205398788549195230}
   rotationSpeed: 2
+--- !u!65 &1300362496968013691
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8275540925748176510}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}

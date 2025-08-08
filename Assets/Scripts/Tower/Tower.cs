@@ -5,7 +5,9 @@ using DG.Tweening;
 public class Tower : MonoBehaviour
 {
     //VARIABLES
-    [SerializeField] private float health = 100.0f;
+    [SerializeField] private float maxhealth = 100.0f;
+    [SerializeField] public float currentHealth = 100.0f;
+
     [SerializeField] private float damage = 100.0f;
     [SerializeField] private float attackRange = 5.0f;
     [SerializeField] private float attackRate = 1.0f;
@@ -53,14 +55,14 @@ public class Tower : MonoBehaviour
                 Enemy enemyScript = enemy.GetComponent<Enemy>();
                 if (enemyScript != null)
                 {
-                    float progress = enemyScript.GetPathProgress(); // Assuming this method exists
+                    //float progress = enemyScript.GetPathProgress(); // Assuming this method exists
                     
                     // Prioritize enemy furthest along the path
-                    if (progress > furthestProgress)
-                    {
-                        furthestProgress = progress;
-                        bestTarget = enemy.transform;
-                    }
+                    // if (progress > furthestProgress)
+                    // {
+                    //     furthestProgress = progress;
+                    //     bestTarget = enemy.transform;
+                    // }
                 }
                 else
                 {

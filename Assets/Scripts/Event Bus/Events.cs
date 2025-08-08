@@ -45,6 +45,7 @@ public struct UpdateUIPageEvent : IEvent
 
 public struct EnvironmentGeneratedEvent : IEvent
 {
+    
 }
 
 #region BUILDING EVENTS

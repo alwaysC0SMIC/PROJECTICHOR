@@ -981,9 +981,10 @@ public class HexEnvironmentManager : MonoBehaviour
             
             // Find the center hub transform for this lane's final destination
             Transform centerHubTransform = null;
+            
+            // Strategy 1: Try to find center hub from the lane's final coordinate
             if (laneCoords.Count > 0)
             {
-                // Get the last coordinate in the lane (should be center hub)
                 HexCoordinates finalCoord = laneCoords[laneCoords.Count - 1];
                 var centerHubData = hexGrid.Values.FirstOrDefault(h => 
                     h.coordinates.Equals(finalCoord) && 
@@ -993,24 +994,56 @@ public class HexEnvironmentManager : MonoBehaviour
                 if (centerHubData != null)
                 {
                     centerHubTransform = centerHubData.gameObject.transform;
+                    Debug.Log($"[HexEnvironmentManager] Lane {laneId}: Found center hub at lane end {finalCoord}");
                 }
-                else
+            }
+            
+            // Strategy 2: If not found, search for the main center hub at (0,0)
+            if (centerHubTransform == null)
+            {
+                var mainCenterData = hexGrid.Values.FirstOrDefault(h => 
+                    h.coordinates.Equals(HexCoordinates.Zero) && 
+                    h.type == HexType.CenterHub && 
+                    h.gameObject != null);
+                
+                if (mainCenterData != null)
                 {
-                    // Fallback: find any center hub transform near the end of the path
-                    var centerHubCoords = GetCenterHubCoordinates();
-                    foreach (var centerCoord in centerHubCoords)
+                    centerHubTransform = mainCenterData.gameObject.transform;
+                    Debug.Log($"[HexEnvironmentManager] Lane {laneId}: Using main center hub at (0,0)");
+                }
+            }
+            
+            // Strategy 3: If still not found, search through all center hub coordinates
+            if (centerHubTransform == null)
+            {
+                var centerHubCoords = GetCenterHubCoordinates();
+                foreach (var centerCoord in centerHubCoords)
+                {
+                    var fallbackCenterData = hexGrid.Values.FirstOrDefault(h => 
+                        h.coordinates.Equals(centerCoord) && 
+                        h.type == HexType.CenterHub && 
+                        h.gameObject != null);
+                    
+                    if (fallbackCenterData != null)
                     {
-                        var fallbackCenterData = hexGrid.Values.FirstOrDefault(h => 
-                            h.coordinates.Equals(centerCoord) && 
-                            h.type == HexType.CenterHub && 
-                            h.gameObject != null);
-                        
-                        if (fallbackCenterData != null)
-                        {
-                            centerHubTransform = fallbackCenterData.gameObject.transform;
-                            break;
-                        }
+                        centerHubTransform = fallbackCenterData.gameObject.transform;
+                        Debug.Log($"[HexEnvironmentManager] Lane {laneId}: Using fallback center hub at {centerCoord}");
+                        break;
                     }
+                }
+            }
+            
+            // Strategy 4: Last resort - find ANY center hub in the grid
+            if (centerHubTransform == null)
+            {
+                var anyCenterHub = hexGrid.Values.FirstOrDefault(h => 
+                    h.type == HexType.CenterHub && 
+                    h.gameObject != null);
+                
+                if (anyCenterHub != null)
+                {
+                    centerHubTransform = anyCenterHub.gameObject.transform;
+                    Debug.LogWarning($"[HexEnvironmentManager] Lane {laneId}: Using any available center hub at {anyCenterHub.coordinates}");
                 }
             }
             
@@ -1026,13 +1059,34 @@ public class HexEnvironmentManager : MonoBehaviour
             // Add pathway transforms in order
             finalTransformList.AddRange(sortedTransforms);
             
-            // Add center hub at the end (final destination)
+            // Always ensure center hub is included at the end (final destination)
             if (centerHubTransform != null)
             {
-                finalTransformList.Add(centerHubTransform);
+                // Check if center hub is already in the list (avoid duplicates)
+                if (!finalTransformList.Contains(centerHubTransform))
+                {
+                    finalTransformList.Add(centerHubTransform);
+                    Debug.Log($"[HexEnvironmentManager] Lane {laneId}: Added center hub as final waypoint");
+                }
+                else
+                {
+                    Debug.Log($"[HexEnvironmentManager] Lane {laneId}: Center hub already in waypoint list");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[HexEnvironmentManager] CRITICAL: No center hub transform found for lane {laneId}! This lane will not have a proper final destination.");
             }
             
             pathwayTransformsByLane[laneId] = finalTransformList;
+            
+            // Enhanced debug logging showing the complete waypoint structure
+            string waypointStructure = $"Lane {laneId} waypoint structure: ";
+            if (edgeSpawnerTransform != null) waypointStructure += "EdgeSpawn → ";
+            waypointStructure += $"{sortedTransforms.Count} Pathways";
+            if (centerHubTransform != null) waypointStructure += " → CenterHub (FINAL)";
+            
+            Debug.Log($"[HexEnvironmentManager] {waypointStructure} | Total: {finalTransformList.Count} waypoints");
         }
         
         return pathwayTransformsByLane;
