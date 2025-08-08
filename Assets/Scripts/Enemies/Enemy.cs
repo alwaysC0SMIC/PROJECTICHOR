@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Enemy : MonoBehaviour
 {
     //VARIABLES
-    [SerializeField] private SO_Enemy enemyData;
+    [SerializeField] public SO_Enemy enemyData;
     [SerializeField] private EnemyState state = EnemyState.Idle;
     [SerializeField] private EnemyHealth health;
     [SerializeField] private FollowWP followWP;
@@ -19,7 +19,7 @@ public class Enemy : MonoBehaviour
         health.Initialize(enemyData.maxhealth, this);
 
         //ATTACK
-        attack.Initialize(enemyData, this);
+        attack.Initialize(this);
 
         //MOVEMENT
         followWP.Initialize(this, inWaypoints);
@@ -55,6 +55,12 @@ public class Enemy : MonoBehaviour
     public void StartAttacking()
     {
         UpdateEnemyState(EnemyState.Attacking);
+    }
+
+    public void StartAttackingCentreHub()
+    {
+        UpdateEnemyState(EnemyState.MovingToCentreHubPosition);
+        attack.BeginAttackCentreHub();
     }
 
     public void TriggerDeath()
@@ -93,6 +99,14 @@ public class Enemy : MonoBehaviour
                 followWP.moveNormally = true;
                 break;
 
+            case EnemyState.MovingToCentreHubPosition:
+                followWP.moveNormally = false;
+                break;
+
+            case EnemyState.AttackingCentreHub:
+                followWP.moveNormally = false;
+                break;
+
             case EnemyState.Dying:
                 TriggerDeath();
                 followWP.moveNormally = false;
@@ -110,5 +124,7 @@ public enum EnemyState
     MovingToAttackPosition,
     Attacking,
     MovingBackToPath,
+    MovingToCentreHubPosition,
+    AttackingCentreHub,
     Dying
 }

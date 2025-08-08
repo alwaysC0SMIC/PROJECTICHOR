@@ -48,6 +48,16 @@ public struct EnvironmentGeneratedEvent : IEvent
     
 }
 
+public struct CentreTowerAttackEvent : IEvent
+{
+    public float damageAmount;
+}
+
+public struct UpdateGameStateEvent : IEvent
+{
+    public GameState gameState;
+}
+
 #region BUILDING EVENTS
 
 public struct BuildingEvent : IEvent
