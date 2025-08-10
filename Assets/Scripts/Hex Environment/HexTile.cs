@@ -70,6 +70,11 @@ public class HexTile : MonoBehaviour, IInteractable
     [Tooltip("Y position offset applied when hovering over buildable tiles")]
     [SerializeField] private float hoverYOffset = 0.1f;
 
+    [TitleGroup("Components")]
+    [LabelText("🎨 Renderer")]
+    [Tooltip("The renderer component for applying materials and colors")]
+    [SerializeField] private Renderer tileRenderer;
+
     // Store original position and scale for hover effect
     private Vector3 originalPosition;
     private Vector3 originalScale;
@@ -84,6 +89,10 @@ public class HexTile : MonoBehaviour, IInteractable
 
     void Start()
     {
+        // Initialize renderer reference if not assigned
+        if (tileRenderer == null)
+            tileRenderer = GetComponent<Renderer>();
+
         previewObject.SetActive(false);
         buildObject.SetActive(false);
     }
@@ -144,10 +153,9 @@ public class HexTile : MonoBehaviour, IInteractable
 
     private void ApplyMaterialForType()
     {
-        var renderer = GetComponent<Renderer>();
-        if (renderer == null)
+        if (tileRenderer == null)
         {
-            Debug.LogWarning($"[HexTile] No Renderer component found on {gameObject.name}");
+            Debug.LogWarning($"[HexTile] No Renderer assigned on {gameObject.name}");
             return;
         }
 
@@ -160,11 +168,11 @@ public class HexTile : MonoBehaviour, IInteractable
             {
                 Material tintedMaterial = new Material(materialToApply);
                 tintedMaterial.color = laneColor;
-                renderer.material = tintedMaterial;
+                tileRenderer.material = tintedMaterial;
             }
             else
             {
-                renderer.material = materialToApply;
+                tileRenderer.material = materialToApply;
             }
         }
         else
@@ -273,21 +281,20 @@ public class HexTile : MonoBehaviour, IInteractable
     [ShowIf("@hexType == HexType.Pathway && laneId >= 0")]
     private void ApplyLaneColorTint()
     {
-        var renderer = GetComponent<Renderer>();
-        if (renderer != null && renderer.material != null)
+        if (tileRenderer != null && tileRenderer.material != null)
         {
             // Create a tinted version of the pathway material
             if (pathwayMaterial != null)
             {
                 Material tintedMaterial = new Material(pathwayMaterial);
                 tintedMaterial.color = laneColor;
-                renderer.material = tintedMaterial;
+                tileRenderer.material = tintedMaterial;
                 Debug.Log($"[HexTile] Applied lane color tint {laneColor} to {gameObject.name}");
             }
             else
             {
                 // Fallback: just apply the lane color directly
-                renderer.material.color = laneColor;
+                tileRenderer.material.color = laneColor;
                 Debug.Log($"[HexTile] Applied lane color {laneColor} to existing material on {gameObject.name}");
             }
         }

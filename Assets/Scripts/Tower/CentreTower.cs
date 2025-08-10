@@ -29,4 +29,9 @@ public class CentreTower : MonoBehaviour
             EventBus<UpdateGameStateEvent>.Raise(new UpdateGameStateEvent { gameState = GameState.Lose });
         }
     }
+
+    void Update()
+    {
+        
+    }
 }
