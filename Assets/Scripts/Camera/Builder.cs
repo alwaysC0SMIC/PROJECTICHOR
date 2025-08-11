@@ -15,8 +15,8 @@ public class Builder : MonoBehaviour
     public bool isBuildMode = false;
     
     [TitleGroup("Raycast Settings")]
-    [PropertyTooltip("Layer(s) considered interactable for building.")]
-    public LayerMask buildableLayer = ~0;
+    [PropertyTooltip("Layer(s) considered for hover effects (should include all hex tiles).")]
+    public LayerMask hoverableLayer = ~0;
 
     [TitleGroup("Raycast Settings")]
     [MinValue(0.1f)]
@@ -29,7 +29,8 @@ public class Builder : MonoBehaviour
     
     // Event binding for BuildingEvent
     private EventBinding<BuildingEvent> buildingEventBinding;
-    private HexTile lastLoggedHexTile;
+    private HexTile lastLoggedHexTile; // For build mode tracking
+    private HexTile lastHoveredHexTile; // For general hover tracking
     private Camera cam;
 
     void Start()
@@ -46,14 +47,33 @@ public class Builder : MonoBehaviour
     
     void Update()
     {
-        if (isBuildMode && cam != null)
+        if (cam != null)
         {
-            TrackHoveredHexTile();
+            // Always track hover for animations (regardless of build mode)
+            TrackGeneralHover();
+            
+            // Only track build-specific hover when in build mode
+            if (isBuildMode)
+            {
+                TrackBuildModeHover();
+            }
         }
     }
     
     void OnDestroy()
     {
+        // Clean up hover states
+        if (lastHoveredHexTile != null)
+        {
+            lastHoveredHexTile.OnHoverExit();
+            lastHoveredHexTile = null;
+        }
+        
+        if (lastLoggedHexTile != null)
+        {
+            lastLoggedHexTile = null;
+        }
+        
         // Unregister from building events
         if (buildingEventBinding != null)
         {
@@ -68,47 +88,92 @@ public class Builder : MonoBehaviour
         
         Debug.Log($"[Builder] Build mode changed: {isBuildMode}");
         
-        // Clear last logged hex when exiting build mode
+        // Notify all hex tiles about build mode state change
+        NotifyAllHexTilesOfBuildModeChange(isBuildMode);
+        
+        // When exiting build mode, attempt to build on the last targeted tile
         if (!isBuildMode)
         {
-            // Make sure to clear hover state when exiting build mode
             if (lastLoggedHexTile != null)
             {
-                lastLoggedHexTile.OnHoverExit();
-
-
-                //ATTEMPT BUILD
-                //if(lastLoggedHexTile.y)
-                lastLoggedHexTile.AttemptBuild();
+                // Only attempt build if it's a valid buildable tile
+                if (lastLoggedHexTile.CanBuild())
+                {
+                    lastLoggedHexTile.AttemptBuild();
+                    Debug.Log($"[Builder] Building placed on valid defender spot at {lastLoggedHexTile.coordinates}");
+                }
+                else
+                {
+                    Debug.Log($"[Builder] Cannot build on {lastLoggedHexTile.hexType} tile at {lastLoggedHexTile.coordinates}");
+                }
             }
 
             lastLoggedHexTile = null;
         }
+        else
+        {
+            // When entering build mode, sync the build tracker with the current hover
+            lastLoggedHexTile = lastHoveredHexTile;
+        }
     }
     
-    private void TrackHoveredHexTile()
+    private void TrackGeneralHover()
     {
         HexTile currentHovered = RaycastForHexTile();
         
-        // Handle hover state changes
-        if (currentHovered != lastLoggedHexTile)
+        // Handle general hover state changes (for animations)
+        if (currentHovered != lastHoveredHexTile)
         {
             // Call OnHoverExit on the previously hovered hex
-            if (lastLoggedHexTile != null)
+            if (lastHoveredHexTile != null)
             {
-                lastLoggedHexTile.OnHoverExit();
-                Debug.Log($"[Builder] BUILD MODE: No longer hovering over hex {lastLoggedHexTile.coordinates}");
+                lastHoveredHexTile.OnHoverExit();
+                Debug.Log($"[Builder] GENERAL HOVER: No longer hovering over hex {lastHoveredHexTile.coordinates}");
             }
             
             // Call OnHover on the newly hovered hex
             if (currentHovered != null)
             {
                 currentHovered.OnHover();
-                Debug.Log($"[Builder] BUILD MODE: Now hovering over hex {currentHovered.coordinates} (Type: {currentHovered.hexType})");
+                Debug.Log($"[Builder] GENERAL HOVER: Now hovering over hex {currentHovered.coordinates} (Type: {currentHovered.hexType})");
+            }
+            
+            lastHoveredHexTile = currentHovered;
+        }
+    }
+    
+    private void TrackBuildModeHover()
+    {
+        HexTile currentHovered = RaycastForHexTile();
+        
+        // Handle build mode specific tracking (for build validation)
+        if (currentHovered != lastLoggedHexTile)
+        {
+            // Update build mode tracking
+            if (lastLoggedHexTile != null)
+            {
+                Debug.Log($"[Builder] BUILD MODE: No longer targeting hex {lastLoggedHexTile.coordinates}");
+            }
+            
+            if (currentHovered != null)
+            {
+                Debug.Log($"[Builder] BUILD MODE: Now targeting hex {currentHovered.coordinates} (Type: {currentHovered.hexType}) - Can Build: {currentHovered.CanBuild()}");
             }
             
             lastLoggedHexTile = currentHovered;
         }
+    }
+    
+    private void NotifyAllHexTilesOfBuildModeChange(bool buildModeActive)
+    {
+        // Find all HexTile components in the scene and notify them of build mode state
+        HexTile[] allHexTiles = FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        foreach (HexTile hexTile in allHexTiles)
+        {
+            hexTile.SetBuildModeState(buildModeActive);
+        }
+        
+        Debug.Log($"[Builder] Notified {allHexTiles.Length} hex tiles of build mode change: {buildModeActive}");
     }
     
     private HexTile RaycastForHexTile()
@@ -116,7 +181,7 @@ public class Builder : MonoBehaviour
         Vector2 screenPos = GetScreenPosition();
         Ray ray = cam.ScreenPointToRay(screenPos);
         
-        if (Physics.Raycast(ray, out var hit, maxDistance, buildableLayer))
+        if (Physics.Raycast(ray, out var hit, maxDistance, hoverableLayer))
         {
             // First try to get HexTile component directly
             var hexTile = hit.collider.GetComponent<HexTile>();

@@ -1,5 +1,6 @@
 using UnityEngine;
 using Sirenix.OdinInspector;
+using AllIn1SpringsToolkit;
 
 /// <summary>
 /// Component attached to individual hex tile GameObjects to store their data and type.
@@ -75,6 +76,11 @@ public class HexTile : MonoBehaviour, IInteractable
     [Tooltip("The renderer component for applying materials and colors")]
     [SerializeField] private Renderer tileRenderer;
 
+    [TitleGroup("Components")]
+    [LabelText("🌸 Transform Spring")]
+    [Tooltip("The transform spring component for smooth hover animations")]
+    [SerializeField] private TransformSpringComponent transformSpring;
+
     // Store original position and scale for hover effect
     private Vector3 originalPosition;
     private Vector3 originalScale;
@@ -82,6 +88,7 @@ public class HexTile : MonoBehaviour, IInteractable
     #endregion
 
     private bool isOccupied = false;
+    private bool isBuildModeActive = false; // Track build mode state
 
     [SerializeField] GameObject previewObject;
     [SerializeField] GameObject buildObject;
@@ -93,15 +100,27 @@ public class HexTile : MonoBehaviour, IInteractable
         if (tileRenderer == null)
             tileRenderer = GetComponent<Renderer>();
 
+        // Initialize transform spring component if not assigned
+        if (transformSpring == null)
+            transformSpring = GetComponent<TransformSpringComponent>();
+
         previewObject.SetActive(false);
         buildObject.SetActive(false);
     }
 
     public void AttemptBuild()
     {
-        buildObject.SetActive(true);
-        isOccupied = true;
-
+        // Only allow building on valid defender spots
+        if (CanBuild())
+        {
+            buildObject.SetActive(true);
+            isOccupied = true;
+            Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
+        }
+        else
+        {
+            Debug.LogWarning($"[HexTile] Cannot build on {hexType} tile at {coordinates} - Occupied: {isOccupied}");
+        }
     }
 
     public void Initialize(HexCoordinates coords, HexType type, int lane = -1, bool junction = false, Color color = default)
@@ -250,6 +269,32 @@ public class HexTile : MonoBehaviour, IInteractable
     {
         return transform.position;
     }
+
+    public bool CanBuild()
+    {
+        return hexType == HexType.DefenderSpot && !isOccupied;
+    }
+
+    public bool ShouldShowHoverAnimation()
+    {
+        return hexType != HexType.Pathway;
+    }
+
+    public void SetBuildModeState(bool buildModeActive)
+    {
+        isBuildModeActive = buildModeActive;
+        
+        // If build mode is disabled, hide preview immediately
+        if (!isBuildModeActive)
+        {
+            previewObject.SetActive(false);
+        }
+    }
+
+    private bool ShouldShowPreview()
+    {
+        return isBuildModeActive && hexType == HexType.DefenderSpot && !isOccupied;
+    }
     
 #if UNITY_EDITOR
     [TitleGroup("Debug")]
@@ -263,7 +308,11 @@ public class HexTile : MonoBehaviour, IInteractable
                   $"Lane ID: {laneId}\n" +
                   $"Junction: {isJunctionPoint}\n" +
                   $"Lane Color: {laneColor}\n" +
-                  $"World Position: {transform.position}");
+                  $"World Position: {transform.position}\n" +
+                  $"Is Occupied: {isOccupied}\n" +
+                  $"Build Mode Active: {isBuildModeActive}\n" +
+                  $"Can Build: {CanBuild()}\n" +
+                  $"Should Show Preview: {ShouldShowPreview()}");
     }
     
     [TitleGroup("Debug")]
@@ -307,7 +356,7 @@ public class HexTile : MonoBehaviour, IInteractable
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🔄 Test Hover Effect")]
     [GUIColor(0.5f, 1f, 0.8f)]
-    [ShowIf("@hexType == HexType.DefenderSpot")]
+    [ShowIf("@ShouldShowHoverAnimation()")]
     private void TestHoverEffect()
     {
         StartCoroutine(TestHoverCoroutine());
@@ -327,36 +376,69 @@ public class HexTile : MonoBehaviour, IInteractable
     
     public void OnHover()
     {
-        // Apply hover effect only to buildable tiles (DefenderSpots)
-        if (hexType == HexType.DefenderSpot && !isOccupied)
+        // Apply hover animation to all non-pathway tiles
+        if (hexType != HexType.Pathway)
         {
             // Ensure we have the original position stored
             if (originalPosition == Vector3.zero)
                 originalPosition = transform.position;
 
-            Vector3 hoverPosition = originalPosition;
-            hoverPosition.y += hoverYOffset;
-            transform.position = hoverPosition;
+            // Use TransformSpring for smooth hover animation
+            if (transformSpring != null)
+            {
+                Vector3 hoverPosition = originalPosition;
+                hoverPosition.y += hoverYOffset;
+                transformSpring.SetTargetPosition(hoverPosition);
+                
+                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}) - Spring target set to Y: {hoverPosition.y:F2}");
+            }
+            else
+            {
+                // Fallback to direct position setting if no spring component
+                Vector3 hoverPosition = originalPosition;
+                hoverPosition.y += hoverYOffset;
+                transform.position = hoverPosition;
+                
+                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}) - Position raised to Y: {hoverPosition.y:F2} (no spring)");
+            }
+        }
 
-            Debug.Log($"[HexTile] Hovering over buildable hex {coordinates} - Position raised to Y: {hoverPosition.y:F2}");
+        // Only show preview for valid buildable tiles when in build mode
+        if (ShouldShowPreview())
+        {
             previewObject.SetActive(true);
+            Debug.Log($"[HexTile] Preview activated for buildable hex {coordinates} (Build Mode: {isBuildModeActive})");
         }
     }
 
     public void OnHoverExit()
     {
-        // Reset position for buildable tiles
-        if (hexType == HexType.DefenderSpot)
+        // Reset position for all non-pathway tiles
+        if (hexType != HexType.Pathway)
         {
             // Ensure we have the original position stored
             if (originalPosition == Vector3.zero)
                 originalPosition = transform.position - new Vector3(0, hoverYOffset, 0); // Estimate original if not stored
 
-            transform.position = originalPosition;
+            // Use TransformSpring for smooth return animation
+            if (transformSpring != null)
+            {
+                transformSpring.SetTargetPosition(originalPosition);
+                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}) - Spring target reset to Y: {originalPosition.y:F2}");
+            }
+            else
+            {
+                // Fallback to direct position setting if no spring component
+                transform.position = originalPosition;
+                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}) - Position reset to Y: {originalPosition.y:F2} (no spring)");
+            }
+        }
 
-            Debug.Log($"[HexTile] Stopped hovering over buildable hex {coordinates} - Position reset to Y: {originalPosition.y:F2}");
-
+        // Only hide preview object if it was potentially showing (build mode check)
+        if (previewObject.activeInHierarchy)
+        {
             previewObject.SetActive(false);
+            Debug.Log($"[HexTile] Preview deactivated for hex {coordinates}");
         }
     }
 
@@ -365,13 +447,13 @@ public class HexTile : MonoBehaviour, IInteractable
         Debug.Log($"[HexTile] Clicked on hex {coordinates} (Type: {hexType})");
 
         // Additional click logic can be added here if needed
-        if (hexType == HexType.DefenderSpot)
+        if (CanBuild())
         {
             Debug.Log($"[HexTile] Clicked on defender spot - could place building here!");
         }
         else
         { 
-            Debug.Log($"[HexTile] Invalid Build");
+            Debug.Log($"[HexTile] Invalid Build - Type: {hexType}, Occupied: {isOccupied}");
         }
     }
 

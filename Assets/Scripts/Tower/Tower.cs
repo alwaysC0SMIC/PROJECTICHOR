@@ -150,8 +150,8 @@ public class Tower : MonoBehaviour
             // Make tower face the target
             FaceTarget(target);
             
-            Debug.Log($"[Tower] Attacking target {target.name} at position {target.position}");
-            Debug.Log($"[Tower] Spawning projectile at {attackPoint.position} with rotation {attackPoint.rotation}");
+            //Debug.Log($"[Tower] Attacking target {target.name} at position {target.position}");
+            //Debug.Log($"[Tower] Spawning projectile at {attackPoint.position} with rotation {attackPoint.rotation}");
             
             GameObject projectileObj = Instantiate(attackEffectPrefab, attackPoint.position, attackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();

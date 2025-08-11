@@ -3,7 +3,17 @@ guid: ff3f1f0cd85ab5940b6830dc9d4884ee
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 4k-Paint-Brush
+    second: {fileID: 2100000, guid: fb454f4f3ff38b34daee29f379ceaf83, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Painterly
+    second: {fileID: 2100000, guid: 23350217f54e89f4f872caf538d3ef86, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
