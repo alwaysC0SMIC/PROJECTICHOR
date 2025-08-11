@@ -81,13 +81,21 @@ public class HexTile : MonoBehaviour, IInteractable
     [Tooltip("The transform spring component for smooth hover animations")]
     [SerializeField] private TransformSpringComponent transformSpring;
 
+    [TitleGroup("Components")]
+    [LabelText("💡 Edge Spawn Light Prefab")]
+    [Tooltip("Light prefab to spawn above edge spawn tiles")]
+    [SerializeField] private GameObject edgeSpawnLightPrefab;
+
     // Store original position and scale for hover effect
     private Vector3 originalPosition;
     private Vector3 originalScale;
 
+    // Store reference to spawned light object
+    private GameObject spawnedLight;
+
     #endregion
 
-    private bool isOccupied = false;
+    public bool isOccupied = false;
     private bool isBuildModeActive = false; // Track build mode state
 
     [SerializeField] GameObject previewObject;
@@ -106,6 +114,12 @@ public class HexTile : MonoBehaviour, IInteractable
 
         previewObject.SetActive(false);
         buildObject.SetActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        // Clean up spawned light when this tile is destroyed
+        RemoveEdgeSpawnLight();
     }
 
     public void AttemptBuild()
@@ -150,6 +164,12 @@ public class HexTile : MonoBehaviour, IInteractable
         }
 
         ApplyMaterialForType();
+        
+        // Spawn light if this is an edge spawn tile
+        if (hexType == HexType.EdgeSpawn)
+        {
+            SpawnEdgeSpawnLight();
+        }
     }
 
     private void SetTileBuild()
@@ -217,6 +237,9 @@ public class HexTile : MonoBehaviour, IInteractable
 
     public void UpdateType(HexType newType, int newLaneId = -1, bool newJunction = false, Color newColor = default)
     {
+        // Store old type to check for changes
+        HexType oldType = hexType;
+        
         hexType = newType;
         laneId = newLaneId;
         isJunctionPoint = newJunction;
@@ -240,6 +263,18 @@ public class HexTile : MonoBehaviour, IInteractable
         // Update layer and material
         SetTileBuild();
         ApplyMaterialForType();
+
+        // Handle light spawning/removal based on type change
+        if (oldType != HexType.EdgeSpawn && newType == HexType.EdgeSpawn)
+        {
+            // Became an edge spawn - spawn light
+            SpawnEdgeSpawnLight();
+        }
+        else if (oldType == HexType.EdgeSpawn && newType != HexType.EdgeSpawn)
+        {
+            // No longer an edge spawn - remove light
+            RemoveEdgeSpawnLight();
+        }
     }
     
     public void SetTileType(HexType newType)
@@ -277,7 +312,59 @@ public class HexTile : MonoBehaviour, IInteractable
 
     public bool ShouldShowHoverAnimation()
     {
-        return hexType != HexType.Pathway;
+        return hexType != HexType.Pathway && hexType != HexType.EdgeSpawn;
+    }
+
+    /// <summary>
+    /// Spawns a light prefab 2.5 units above this edge spawn tile
+    /// </summary>
+    private void SpawnEdgeSpawnLight()
+    {
+        if (edgeSpawnLightPrefab == null)
+        {
+            Debug.LogWarning($"[HexTile] No edge spawn light prefab assigned for {gameObject.name}");
+            return;
+        }
+
+        if (spawnedLight != null)
+        {
+            Debug.LogWarning($"[HexTile] Light already spawned for {gameObject.name}");
+            return;
+        }
+
+        // Calculate spawn position 2.5 units above this tile
+        Vector3 lightPosition = transform.position + Vector3.up * 2.5f;
+
+        // Instantiate the light prefab
+        spawnedLight = Instantiate(edgeSpawnLightPrefab, lightPosition, Quaternion.identity);
+        
+        // Parent it to this tile
+        spawnedLight.transform.SetParent(transform);
+        
+        // Give it a descriptive name
+        spawnedLight.name = $"EdgeSpawnLight_{coordinates.q}_{coordinates.r}";
+
+        Debug.Log($"[HexTile] Spawned edge spawn light for {gameObject.name} at position {lightPosition}");
+    }
+
+    /// <summary>
+    /// Removes the spawned light if it exists
+    /// </summary>
+    private void RemoveEdgeSpawnLight()
+    {
+        if (spawnedLight != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(spawnedLight);
+            }
+            else
+            {
+                DestroyImmediate(spawnedLight);
+            }
+            spawnedLight = null;
+            Debug.Log($"[HexTile] Removed edge spawn light for {gameObject.name}");
+        }
     }
 
     public void SetBuildModeState(bool buildModeActive)
@@ -362,6 +449,30 @@ public class HexTile : MonoBehaviour, IInteractable
         StartCoroutine(TestHoverCoroutine());
     }
     
+    [TitleGroup("Debug")]
+    [Button(ButtonSizes.Medium, Name = "💡 Toggle Edge Spawn Light")]
+    [GUIColor(1f, 1f, 0.2f)]
+    [ShowIf("@hexType == HexType.EdgeSpawn")]
+    private void ToggleEdgeSpawnLight()
+    {
+        if (spawnedLight != null)
+        {
+            RemoveEdgeSpawnLight();
+        }
+        else
+        {
+            SpawnEdgeSpawnLight();
+        }
+    }
+
+    [TitleGroup("Debug")]
+    [Button(ButtonSizes.Medium, Name = "💡 Force Spawn Light")]
+    [GUIColor(0.2f, 1f, 1f)]
+    private void ForceSpawnLight()
+    {
+        SpawnEdgeSpawnLight();
+    }
+    
     private System.Collections.IEnumerator TestHoverCoroutine()
     {
         Debug.Log($"[HexTile] Testing hover effect on {gameObject.name}");
@@ -376,30 +487,27 @@ public class HexTile : MonoBehaviour, IInteractable
     
     public void OnHover()
     {
-        // Apply hover animation to all non-pathway tiles
-        if (hexType != HexType.Pathway)
+        // Apply hover animation to tiles that should show hover effects (excludes pathway and edge spawn)
+        if (hexType != HexType.Pathway && hexType != HexType.EdgeSpawn)
         {
             // Ensure we have the original position stored
             if (originalPosition == Vector3.zero)
                 originalPosition = transform.position;
 
-            // Use TransformSpring for smooth hover animation
-            if (transformSpring != null)
+            Vector3 hoverPosition = originalPosition;
+            hoverPosition.y += hoverYOffset;
+
+            // Use TransformSpring only for unoccupied defender tiles
+            if (hexType == HexType.DefenderSpot && !isOccupied && transformSpring != null)
             {
-                Vector3 hoverPosition = originalPosition;
-                hoverPosition.y += hoverYOffset;
                 transformSpring.SetTargetPosition(hoverPosition);
-                
-                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}) - Spring target set to Y: {hoverPosition.y:F2}");
+                Debug.Log($"[HexTile] Hovering over unoccupied defender hex {coordinates} - Spring target set to Y: {hoverPosition.y:F2}");
             }
             else
             {
-                // Fallback to direct position setting if no spring component
-                Vector3 hoverPosition = originalPosition;
-                hoverPosition.y += hoverYOffset;
+                // Direct position setting for all other hoverable tiles (CenterHub, Environment, occupied defenders)
                 transform.position = hoverPosition;
-                
-                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}) - Position raised to Y: {hoverPosition.y:F2} (no spring)");
+                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position set to Y: {hoverPosition.y:F2} (direct)");
             }
         }
 
@@ -413,24 +521,24 @@ public class HexTile : MonoBehaviour, IInteractable
 
     public void OnHoverExit()
     {
-        // Reset position for all non-pathway tiles
-        if (hexType != HexType.Pathway)
+        // Reset position for tiles that show hover effects (excludes pathway and edge spawn)
+        if (hexType != HexType.Pathway && hexType != HexType.EdgeSpawn)
         {
             // Ensure we have the original position stored
             if (originalPosition == Vector3.zero)
                 originalPosition = transform.position - new Vector3(0, hoverYOffset, 0); // Estimate original if not stored
 
-            // Use TransformSpring for smooth return animation
-            if (transformSpring != null)
+            // Use TransformSpring only for unoccupied defender tiles
+            if (hexType == HexType.DefenderSpot && !isOccupied && transformSpring != null)
             {
                 transformSpring.SetTargetPosition(originalPosition);
-                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}) - Spring target reset to Y: {originalPosition.y:F2}");
+                Debug.Log($"[HexTile] Stopped hovering over unoccupied defender hex {coordinates} - Spring target reset to Y: {originalPosition.y:F2}");
             }
             else
             {
-                // Fallback to direct position setting if no spring component
+                // Direct position setting for all other hoverable tiles (CenterHub, Environment, occupied defenders)
                 transform.position = originalPosition;
-                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}) - Position reset to Y: {originalPosition.y:F2} (no spring)");
+                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position reset to Y: {originalPosition.y:F2} (direct)");
             }
         }
 

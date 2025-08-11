@@ -254,7 +254,7 @@ GameObject:
   - component: {fileID: 3387298567153447664}
   - component: {fileID: 3518043007260637499}
   m_Layer: 0
-  m_Name: Hexagon
+  m_Name: HexTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -932,16 +932,17 @@ MonoBehaviour:
   laneId: -1
   isJunctionPoint: 0
   laneColor: {r: 1, g: 1, b: 1, a: 1}
-  centerHubMaterial: {fileID: 2100000, guid: 6fc28e0ec4ee91e40979873125cd0545, type: 2}
-  pathwayMaterial: {fileID: 2100000, guid: 53583c2c89bb9d649986f45543d48ef4, type: 2}
-  defenderSpotMaterial: {fileID: 2100000, guid: 918253248c693054e82a48412cda0476, type: 2}
-  edgeSpawnMaterial: {fileID: 2100000, guid: 3e8816e370ec38441b606f878e6a2f1d, type: 2}
-  environmentMaterial: {fileID: 2100000, guid: f53aaebabbd9851428095d4ac3631f1b, type: 2}
+  centerHubMaterial: {fileID: 2100000, guid: 56aa86673a787ad48b4c3a9dfdfdb904, type: 2}
+  pathwayMaterial: {fileID: 2100000, guid: 511193a697e22224e82f7112a5cc3d0e, type: 2}
+  defenderSpotMaterial: {fileID: 2100000, guid: 0dff60ffed694364ba3ba9c32cabcef7, type: 2}
+  edgeSpawnMaterial: {fileID: 2100000, guid: 0dff60ffed694364ba3ba9c32cabcef7, type: 2}
+  environmentMaterial: {fileID: 2100000, guid: 56aa86673a787ad48b4c3a9dfdfdb904, type: 2}
   useLaneColorTint: 0
   buildableLayerName: Buildable
   hoverYOffset: 0.25
   tileRenderer: {fileID: 2548077477700421393}
   transformSpring: {fileID: 3518043007260637499}
+  edgeSpawnLightPrefab: {fileID: 3245873071620630040, guid: 40ddd2d608af01f4fb990bb2b8d6c0e8, type: 3}
   previewObject: {fileID: 1489850538592677727}
   buildObject: {fileID: 8275540925748176510}
 --- !u!114 &3518043007260637499
@@ -1293,7 +1294,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 6795462705980167066, guid: ff3f1f0cd85ab5940b6830dc9d4884ee, type: 3}
+  - {fileID: 2100000, guid: 511193a697e22224e82f7112a5cc3d0e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
