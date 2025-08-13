@@ -240,6 +240,18 @@ public class HexTile : MonoBehaviour, IInteractable
             // Hide environment object for non-environment tiles
             environmentObject.SetActive(false);
         }
+        
+        // Update original position after all positioning is done (important for terrain height)
+        UpdateOriginalPosition();
+    }
+    
+    /// <summary>
+    /// Updates the stored original position - useful when terrain height changes the initial position
+    /// </summary>
+    public void UpdateOriginalPosition()
+    {
+        originalPosition = transform.position;
+        originalScale = transform.localScale;
     }
 
     private void SetTileBuild()
