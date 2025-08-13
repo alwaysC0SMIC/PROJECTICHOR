@@ -90,44 +90,44 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
     {
         hand.Clear();
 
-        // Define color palette with names
-        Color[] cardColors = {
-            Color.red,
-            Color.blue,
-            Color.green,
-            Color.yellow,
-            Color.magenta,
-            Color.cyan,
-            new Color(1f, 0.5f, 0f), // Orange
-            new Color(0.5f, 0f, 0.5f), // Purple
-            new Color(0.5f, 0.25f, 0f), // Brown
-            new Color(1f, 0.75f, 0.8f) // Pink
-        };
+        // // Define color palette with names
+        // Color[] cardColors = {
+        //     Color.red,
+        //     Color.blue,
+        //     Color.green,
+        //     Color.yellow,
+        //     Color.magenta,
+        //     Color.cyan,
+        //     new Color(1f, 0.5f, 0f), // Orange
+        //     new Color(0.5f, 0f, 0.5f), // Purple
+        //     new Color(0.5f, 0.25f, 0f), // Brown
+        //     new Color(1f, 0.75f, 0.8f) // Pink
+        // };
         
-        string[] colorNames = {
-            "Red",
-            "Blue", 
-            "Green",
-            "Yellow",
-            "Magenta",
-            "Cyan",
-            "Orange",
-            "Purple",
-            "Brown",
-            "Pink"
-        };
+        // string[] colorNames = {
+        //     "Red",
+        //     "Blue", 
+        //     "Green",
+        //     "Yellow",
+        //     "Magenta",
+        //     "Cyan",
+        //     "Orange",
+        //     "Purple",
+        //     "Brown",
+        //     "Pink"
+        // };
 
         for (int i = 0; i < maxHandSize; i++)
         {
             GameObject card = Instantiate(cardPrefab, transform);
             
             // Assign unique color and name
-            Color cardColor = cardColors[i % cardColors.Length];
-            string colorName = colorNames[i % colorNames.Length];
+            //Color cardColor = cardColors[i % cardColors.Length];
+            //string colorName = colorNames[i % colorNames.Length];
             
-            card.name = $"Card {i + 1} ({colorName})";
+            card.name = $"Card {i + 1}";
             
-            card.GetComponent<UnityEngine.UI.Image>().color = cardColor;
+            //card.GetComponent<UnityEngine.UI.Image>().color = cardColor;
             
             hand.Add(card);
             

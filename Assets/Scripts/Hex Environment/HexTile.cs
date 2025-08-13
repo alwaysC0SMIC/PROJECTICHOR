@@ -101,6 +101,8 @@ public class HexTile : MonoBehaviour, IInteractable
     [SerializeField] GameObject previewObject;
     [SerializeField] GameObject buildObject;
 
+    [SerializeField] GameObject hexagonUI;
+
 
     void Start()
     {
@@ -129,11 +131,41 @@ public class HexTile : MonoBehaviour, IInteractable
         {
             buildObject.SetActive(true);
             isOccupied = true;
+            
+            // Show hexagonUI when a defender is built
+            if (hexagonUI != null)
+            {
+                hexagonUI.SetActive(true);
+            }
+            
             Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
         }
         else
         {
             Debug.LogWarning($"[HexTile] Cannot build on {hexType} tile at {coordinates} - Occupied: {isOccupied}");
+        }
+    }
+
+    public void OnTowerDestroyed()
+    {
+        // Called when the tower/defender on this tile is destroyed
+        if (hexType == HexType.DefenderSpot)
+        {
+            isOccupied = false;
+            
+            // Hide hexagonUI when defender is destroyed
+            if (hexagonUI != null)
+            {
+                hexagonUI.SetActive(false);
+            }
+            
+            // Hide build object if it was active
+            if (buildObject != null)
+            {
+                buildObject.SetActive(false);
+            }
+            
+            Debug.Log($"[HexTile] Tower destroyed on defender spot at {coordinates} - hexagonUI hidden");
         }
     }
 
@@ -164,11 +196,21 @@ public class HexTile : MonoBehaviour, IInteractable
         }
 
         ApplyMaterialForType();
-        
+
         // Spawn light if this is an edge spawn tile
         if (hexType == HexType.EdgeSpawn)
         {
             SpawnEdgeSpawnLight();
+        }
+
+        // Show hexagonUI only for occupied defender spots
+        if (hexType == HexType.DefenderSpot)
+        {
+            hexagonUI.SetActive(isOccupied);
+        }
+        else
+        {
+            hexagonUI.SetActive(false);
         }
     }
 
@@ -275,6 +317,24 @@ public class HexTile : MonoBehaviour, IInteractable
             // No longer an edge spawn - remove light
             RemoveEdgeSpawnLight();
         }
+
+        // Handle hexagonUI visibility based on type change
+        if (newType == HexType.DefenderSpot)
+        {
+            // Show hexagonUI only if occupied
+            if (hexagonUI != null)
+            {
+                hexagonUI.SetActive(isOccupied);
+            }
+        }
+        else
+        {
+            // Hide hexagonUI for non-defender tiles
+            if (hexagonUI != null)
+            {
+                hexagonUI.SetActive(false);
+            }
+        }
     }
     
     public void SetTileType(HexType newType)
@@ -333,7 +393,7 @@ public class HexTile : MonoBehaviour, IInteractable
         }
 
         // Calculate spawn position 2.5 units above this tile
-        Vector3 lightPosition = transform.position + Vector3.up * 2.5f;
+        Vector3 lightPosition = transform.position + Vector3.up * 0.5f;
 
         // Instantiate the light prefab
         spawnedLight = Instantiate(edgeSpawnLightPrefab, lightPosition, Quaternion.identity);
@@ -471,6 +531,22 @@ public class HexTile : MonoBehaviour, IInteractable
     private void ForceSpawnLight()
     {
         SpawnEdgeSpawnLight();
+    }
+
+    [TitleGroup("Debug")]
+    [Button(ButtonSizes.Medium, Name = "🏗️ Test Build/Destroy")]
+    [GUIColor(1f, 0.5f, 0.2f)]
+    [ShowIf("@hexType == HexType.DefenderSpot")]
+    private void ToggleBuildDestroy()
+    {
+        if (isOccupied)
+        {
+            OnTowerDestroyed();
+        }
+        else
+        {
+            AttemptBuild();
+        }
     }
     
     private System.Collections.IEnumerator TestHoverCoroutine()

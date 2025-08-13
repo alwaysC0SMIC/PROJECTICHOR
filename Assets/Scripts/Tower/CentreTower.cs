@@ -30,8 +30,4 @@ public class CentreTower : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        
-    }
 }
