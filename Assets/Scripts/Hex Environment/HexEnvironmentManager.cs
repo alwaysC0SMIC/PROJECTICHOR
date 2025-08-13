@@ -92,6 +92,7 @@ public class HexData
     public GameObject gameObject;
     public int laneId = -1; // Which lane this hex belongs to (-1 = no lane)
     public bool isJunctionPoint = false; // Where lanes merge
+    public bool isExteriorEnvironment = false; // True for exterior environment tiles that should have decorative objects
     
     public HexData(HexCoordinates coords, HexType hexType)
     {
@@ -255,6 +256,21 @@ public class HexEnvironmentManager : MonoBehaviour
     [TitleGroup("TD/Gameplay Features")]
     [SerializeField, Tooltip("Generate one spawn point per lane at the outermost hex")]
     private bool generateEdgeSpawns = true;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Gameplay Features")]
+    [SerializeField, Tooltip("Generate exterior environment tiles around the main environment")]
+    private bool generateExteriorEnvironment = true;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Gameplay Features")]
+    [SerializeField, Range(1, 15), Tooltip("Number of exterior environment tile rows to generate")]
+    private int exteriorEnvironmentRows = 2;
+    
+    [TabGroup("TD", "🏰 Tower Defense")]
+    [TitleGroup("TD/Gameplay Features")]
+    [SerializeField, Tooltip("Fill gaps between edge spawns and environment with environment tiles")]
+    private bool fillEdgeSpawnGaps = true;
     
     [TabGroup("TD", "🏰 Tower Defense")]
     [TitleGroup("TD/Gameplay Features")]
@@ -548,7 +564,13 @@ public class HexEnvironmentManager : MonoBehaviour
         if (generateEdgeSpawns)
             GenerateEdgeSpawnPoints();
 
-        // Step 5: Instantiate GameObjects (only if not in gizmos-only mode and prefab exists)
+        // Step 5: Generate exterior environment tiles
+        if (generateExteriorEnvironment)
+        {
+            GenerateExteriorEnvironmentTiles();
+        }
+
+        // Step 6: Instantiate GameObjects (only if not in gizmos-only mode and prefab exists)
         if (canInstantiateObjects)
         {
             InstantiateHexGameObjects();
@@ -2202,6 +2224,159 @@ public class HexEnvironmentManager : MonoBehaviour
         
         return bestDirection;
     }
+
+    private void GenerateExteriorEnvironmentTiles()
+    {
+        Debug.Log($"[HexEnvironmentManager] Generating exterior environment tiles with {exteriorEnvironmentRows} rows");
+        
+        // Get all current hex coordinates to find the boundary
+        HashSet<HexCoordinates> existingHexes = new HashSet<HexCoordinates>(hexGrid.Keys);
+        HashSet<HexCoordinates> newExteriorHexes = new HashSet<HexCoordinates>();
+        
+        // Generate exterior rings
+        for (int ring = 1; ring <= exteriorEnvironmentRows; ring++)
+        {
+            // Find the current outer boundary
+            int currentMaxRadius = gridRadius + ring - 1;
+            
+            // Generate all coordinates in the next ring out
+            List<HexCoordinates> ringCoordinates = GetHexRing(HexCoordinates.Zero, gridRadius + ring);
+            
+            foreach (var coord in ringCoordinates)
+            {
+                // Skip if already exists
+                if (existingHexes.Contains(coord) || newExteriorHexes.Contains(coord))
+                    continue;
+                
+                // Add as environment tile
+                HexData environmentData = new HexData(coord, HexType.Environment);
+                hexGrid[coord] = environmentData;
+                newExteriorHexes.Add(coord);
+            }
+        }
+        
+        // Fill gaps around edge spawns if enabled
+        if (fillEdgeSpawnGaps)
+        {
+            FillEdgeSpawnGaps(newExteriorHexes);
+        }
+        
+        // Activate exterior decorative objects for true exterior tiles
+        ActivateExteriorDecorativeObjects(newExteriorHexes);
+        
+        Debug.Log($"[HexEnvironmentManager] Generated {newExteriorHexes.Count} exterior environment tiles");
+    }
+    
+    private void FillEdgeSpawnGaps(HashSet<HexCoordinates> exteriorHexes)
+    {
+        Debug.Log("[HexEnvironmentManager] Filling gaps around edge spawns");
+        
+        HashSet<HexCoordinates> gapFillerHexes = new HashSet<HexCoordinates>();
+        
+        // For each edge spawn, check for gaps that need filling
+        foreach (var spawnCoord in laneSpawnPoints)
+        {
+            // Check all directions around the spawn point for gaps
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                HexCoordinates adjacentCoord = new HexCoordinates(
+                    spawnCoord.q + direction.q,
+                    spawnCoord.r + direction.r
+                );
+                
+                // If this adjacent position is empty and not already an exterior hex
+                if (!hexGrid.ContainsKey(adjacentCoord) && !exteriorHexes.Contains(adjacentCoord))
+                {
+                    // Check if it's between the spawn and the main environment
+                    if (IsBetweenSpawnAndEnvironment(adjacentCoord, spawnCoord))
+                    {
+                        HexData gapFillerData = new HexData(adjacentCoord, HexType.Environment);
+                        hexGrid[adjacentCoord] = gapFillerData;
+                        gapFillerHexes.Add(adjacentCoord);
+                    }
+                }
+            }
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] Filled {gapFillerHexes.Count} gaps around edge spawns");
+    }
+    
+    private bool IsBetweenSpawnAndEnvironment(HexCoordinates candidateCoord, HexCoordinates spawnCoord)
+    {
+        // Check if the candidate coordinate is closer to center than the spawn point
+        float candidateDistance = GetHexDistance(candidateCoord, HexCoordinates.Zero);
+        float spawnDistance = GetHexDistance(spawnCoord, HexCoordinates.Zero);
+        
+        // Also check if there's a clear path towards the main environment
+        return candidateDistance < spawnDistance;
+    }
+    
+    private void ActivateExteriorDecorativeObjects(HashSet<HexCoordinates> exteriorHexes)
+    {
+        Debug.Log("[HexEnvironmentManager] Activating decorative objects for exterior environment tiles and edge spawn areas");
+        
+        // Mark true exterior environment tiles for decoration
+        foreach (var coord in exteriorHexes)
+        {
+            if (IsTrueExteriorTile(coord))
+            {
+                if (hexGrid.ContainsKey(coord))
+                {
+                    hexGrid[coord].isExteriorEnvironment = true;
+                }
+            }
+        }
+        
+        // Mark edge spawn tiles for decoration
+        foreach (var spawnCoord in laneSpawnPoints)
+        {
+            if (hexGrid.ContainsKey(spawnCoord))
+            {
+                hexGrid[spawnCoord].isExteriorEnvironment = true;
+                Debug.Log($"[HexEnvironmentManager] Marked edge spawn at {spawnCoord} for decorative object");
+            }
+        }
+        
+        // Mark environment tiles adjacent to edge spawns for decoration
+        foreach (var spawnCoord in laneSpawnPoints)
+        {
+            foreach (var direction in HEX_DIRECTIONS)
+            {
+                HexCoordinates adjacentCoord = new HexCoordinates(
+                    spawnCoord.q + direction.q,
+                    spawnCoord.r + direction.r
+                );
+                
+                // If this adjacent position is an environment tile, mark it for decoration
+                if (hexGrid.ContainsKey(adjacentCoord) && 
+                    hexGrid[adjacentCoord].type == HexType.Environment)
+                {
+                    hexGrid[adjacentCoord].isExteriorEnvironment = true;
+                    Debug.Log($"[HexEnvironmentManager] Marked environment tile at {adjacentCoord} (adjacent to edge spawn) for decorative object");
+                }
+            }
+        }
+    }
+    
+    private bool IsTrueExteriorTile(HexCoordinates coord)
+    {
+        // Check if this tile is on the true exterior (not filling a gap)
+        // It should be far enough from center and not adjacent to edge spawns
+        float distanceFromCenter = GetHexDistance(coord, HexCoordinates.Zero);
+        
+        // Check if it's far enough to be considered exterior
+        if (distanceFromCenter < gridRadius + 1)
+            return false;
+            
+        // Check if it's too close to any edge spawn (likely a gap filler)
+        foreach (var spawnCoord in laneSpawnPoints)
+        {
+            if (GetHexDistance(coord, spawnCoord) <= 1.5f)
+                return false;
+        }
+        
+        return true;
+    }
     
     private void InstantiateHexGameObjects()
     {
@@ -2240,7 +2415,8 @@ public class HexEnvironmentManager : MonoBehaviour
                     hexData.type, 
                     hexData.laneId, 
                     hexData.isJunctionPoint, 
-                    hexColor
+                    hexColor,
+                    hexData.isExteriorEnvironment
                 );
             }
             else
