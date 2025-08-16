@@ -102,8 +102,8 @@ public class HexTile : MonoBehaviour, IInteractable
     [SerializeField] GameObject buildObject;
 
     [SerializeField] GameObject hexagonUI;
-    [SerializeField] GameObject environmentObject;
-    [SerializeField] GameObject exteriorDecorativeObject;
+    //[SerializeField] GameObject environmentObject;
+    //[SerializeField] GameObject exteriorDecorativeObject;
 
 
     void Start()
@@ -224,10 +224,10 @@ public class HexTile : MonoBehaviour, IInteractable
         if(hexType == HexType.Environment)
         {
             // Initialize environment object if this is an environment tile
-            if (environmentObject != null)
-            {
-                environmentObject.SetActive(true);
-            }
+            // if (environmentObject != null)
+            // {
+            //     environmentObject.SetActive(true);
+            // }
             
             // Activate exterior decorative objects for exterior environment tiles
             if (isExteriorEnvironment)
@@ -235,11 +235,11 @@ public class HexTile : MonoBehaviour, IInteractable
                 ActivateExteriorDecorativeObject();
             }
         }
-        else if (environmentObject != null)
-        {
-            // Hide environment object for non-environment tiles
-            environmentObject.SetActive(false);
-        }
+        // else if (environmentObject != null)
+        // {
+        //     // Hide environment object for non-environment tiles
+        //     environmentObject.SetActive(false);
+        // }
         
         // Update original position after all positioning is done (important for terrain height)
         UpdateOriginalPosition();
@@ -472,15 +472,15 @@ public class HexTile : MonoBehaviour, IInteractable
     /// </summary>
     public void ActivateExteriorDecorativeObject()
     {
-        if (exteriorDecorativeObject != null)
-        {
-            exteriorDecorativeObject.SetActive(true);
-            Debug.Log($"[HexTile] Activated exterior decorative object for {gameObject.name}");
-        }
-        else
-        {
-            Debug.LogWarning($"[HexTile] No exterior decorative object assigned for {gameObject.name}");
-        }
+        // if (exteriorDecorativeObject != null)
+        // {
+        //     exteriorDecorativeObject.SetActive(true);
+        //     Debug.Log($"[HexTile] Activated exterior decorative object for {gameObject.name}");
+        // }
+        // else
+        // {
+        //     Debug.LogWarning($"[HexTile] No exterior decorative object assigned for {gameObject.name}");
+        // }
     }
 
     public void SetBuildModeState(bool buildModeActive)
@@ -611,15 +611,15 @@ public class HexTile : MonoBehaviour, IInteractable
     [ShowIf("@hexType == HexType.Environment")]
     private void ToggleExteriorDecorativeObject()
     {
-        if (exteriorDecorativeObject != null)
-        {
-            exteriorDecorativeObject.SetActive(!exteriorDecorativeObject.activeInHierarchy);
-            Debug.Log($"[HexTile] Exterior decorative object toggled to: {exteriorDecorativeObject.activeInHierarchy}");
-        }
-        else
-        {
-            Debug.LogWarning($"[HexTile] No exterior decorative object assigned");
-        }
+        // if (exteriorDecorativeObject != null)
+        // {
+        //     exteriorDecorativeObject.SetActive(!exteriorDecorativeObject.activeInHierarchy);
+        //     Debug.Log($"[HexTile] Exterior decorative object toggled to: {exteriorDecorativeObject.activeInHierarchy}");
+        // }
+        // else
+        // {
+        //     Debug.LogWarning($"[HexTile] No exterior decorative object assigned");
+        // }
     }
     
     private System.Collections.IEnumerator TestHoverCoroutine()

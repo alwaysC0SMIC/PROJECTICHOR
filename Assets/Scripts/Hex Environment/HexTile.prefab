@@ -274,7 +274,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &381626168687099482
 Transform:
   m_ObjectHideFlags: 0
@@ -1389,8 +1389,6 @@ MonoBehaviour:
   previewObject: {fileID: 1489850538592677727}
   buildObject: {fileID: 8275540925748176510}
   hexagonUI: {fileID: 7098362735871319931}
-  environmentObject: {fileID: 1678481633264758457}
-  exteriorDecorativeObject: {fileID: 7218513122567237052}
 --- !u!114 &3518043007260637499
 MonoBehaviour:
   m_ObjectHideFlags: 0

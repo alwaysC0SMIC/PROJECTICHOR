@@ -43,9 +43,12 @@ public struct UpdateUIPageEvent : IEvent
 
 #endregion
 
-public struct EnvironmentGeneratedEvent : IEvent
+public struct EnvironmentGeneratedEvent : IEvent{}
+
+public struct AddOrRemoveIchorEvent : IEvent
 {
-    
+    public bool addOrRemove;
+    public int ichorAmount;
 }
 
 public struct CentreTowerAttackEvent : IEvent

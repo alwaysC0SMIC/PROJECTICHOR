@@ -278,23 +278,18 @@ public class HexEnvironmentManager : MonoBehaviour
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
-    [SerializeField, Range(0.1f, 5f), Tooltip("Maximum height variation for environment tiles")]
-    private float maxTerrainHeight = 1.5f;
+    [SerializeField, Range(0.1f, 10f), Tooltip("Maximum total terrain height (unlimited, but will follow step constraints)")]
+    private float maxTerrainHeight = 3f;
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
-    [SerializeField, Range(0f, 5f), Tooltip("Distance from center before terrain height starts applying (creates flat buffer zone)")]
-    private float heightMargin = 1.0f;
+    [SerializeField, Range(1f, 10f), Tooltip("Distance from gameplay tiles (defenders/pathways) before terrain height starts applying")]
+    private float terrainMargin = 2f;
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
-    [SerializeField, Range(0.1f, 1f), Tooltip("Height step granularity (smaller = smoother transitions)")]
-    private float heightStepAmount = 0.2f;
-    
-    [TabGroup("Terrain Verticality")]
-    [TitleGroup("TD/Terrain Verticality")]
-    [SerializeField, Range(0.1f, 10f), Tooltip("Scale of the noise pattern (larger = more spread out features)")]
-    private float noiseScale = 2f;
+    [SerializeField, Range(0.1f, 2f), Tooltip("Scale of the noise pattern (smaller = more detailed terrain)")]
+    private float noiseScale = 1f;
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
@@ -303,8 +298,8 @@ public class HexEnvironmentManager : MonoBehaviour
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
-    [SerializeField, Range(0f, 1f), Tooltip("Smoothing factor for height transitions (0 = no smoothing, 1 = maximum smoothing)")]
-    private float heightSmoothing = 0.3f;
+    [SerializeField, Range(1, 10), Tooltip("Number of smoothing passes to ensure proper height transitions")]
+    private int smoothingPasses = 3;
     
     [TabGroup("Terrain Verticality")]
     [TitleGroup("TD/Terrain Verticality")]
@@ -339,6 +334,86 @@ public class HexEnvironmentManager : MonoBehaviour
         Debug.Log("[HexEnvironmentManager] Terrain heights recalculated and applied");
     }
     
+    [TabGroup("Terrain Verticality")]
+    [TitleGroup("TD/Terrain Verticality")]
+    [Button(ButtonSizes.Medium, Name = "🔍 Debug Terrain Margin")]
+    [GUIColor(1f, 0.8f, 0.4f)]
+    private void DebugTerrainMargin()
+    {
+        if (hexGrid.Count == 0)
+        {
+            Debug.LogWarning("[HexEnvironmentManager] No environment generated yet. Generate environment first.");
+            return;
+        }
+        
+        HashSet<HexCoordinates> eligibleTiles = GetEnvironmentTilesOutsideMargin();
+        int totalEnvironmentTiles = hexGrid.Values.Count(h => h.type == HexType.Environment);
+        
+        Debug.Log($"[HexEnvironmentManager] Environment Analysis:");
+        Debug.Log($"  - Total environment tiles: {totalEnvironmentTiles}");
+        Debug.Log($"  - Tiles outside {terrainMargin}-unit margin: {eligibleTiles.Count}");
+        Debug.Log($"  - Tiles inside margin: {totalEnvironmentTiles - eligibleTiles.Count}");
+        
+        // Log a few examples
+        int count = 0;
+        foreach (var coord in eligibleTiles)
+        {
+            if (count < 5)
+            {
+                float distance = GetDistanceToNearestGameplayTile(coord);
+                Debug.Log($"  - Tile {coord}: distance to gameplay = {distance:F2}");
+            }
+            count++;
+        }
+        
+        if (eligibleTiles.Count > 5)
+        {
+            Debug.Log($"  ... and {eligibleTiles.Count - 5} more tiles");
+        }
+        
+        if (eligibleTiles.Count == 0)
+        {
+            Debug.LogWarning("[HexEnvironmentManager] No tiles eligible for terrain! Consider reducing terrain margin or increasing grid radius.");
+        }
+    }
+    
+    [TabGroup("Terrain Verticality")]
+    [TitleGroup("TD/Terrain Verticality")]
+    [Button(ButtonSizes.Medium, Name = "🏗️ Debug Current State")]
+    [GUIColor(0.8f, 0.6f, 1f)]
+    private void DebugCurrentState()
+    {
+        Debug.Log($"[HexEnvironmentManager] Current State:");
+        Debug.Log($"  - Total tiles in hexGrid: {hexGrid.Count}");
+        Debug.Log($"  - Terrain heights calculated: {terrainHeights.Count}");
+        Debug.Log($"  - Terrain enabled: {enableTerrainHeight}");
+        Debug.Log($"  - Terrain margin: {terrainMargin}");
+        
+        if (hexParent != null)
+        {
+            Debug.Log($"  - GameObjects in hierarchy: {hexParent.childCount}");
+        }
+        else
+        {
+            Debug.Log("  - No hex parent found");
+        }
+        
+        // Check hex type distribution
+        var typeCounts = new Dictionary<HexType, int>();
+        foreach (var kvp in hexGrid)
+        {
+            var type = kvp.Value.type;
+            if (!typeCounts.ContainsKey(type))
+                typeCounts[type] = 0;
+            typeCounts[type]++;
+        }
+        
+        foreach (var kvp in typeCounts)
+        {
+            Debug.Log($"  - {kvp.Key}: {kvp.Value} tiles");
+        }
+    }
+    
     private void UpdateExistingHexHeights()
     {
         foreach (var kvp in hexGrid)
@@ -350,10 +425,74 @@ public class HexEnvironmentManager : MonoBehaviour
             {
                 Vector3 basePos = HexToWorldPosition(coord);
                 
-                if (enableTerrainHeight)
+                if (!enableTerrainHeight)
                 {
-                    float terrainHeight = GetTerrainHeightAt(coord);
-                    basePos.y += terrainHeight;
+                    terrainHeights.Clear();
+                    return;
+                }
+
+                HashSet<HexCoordinates> eligibleTiles = GetEnvironmentTilesOutsideMargin();
+                if (eligibleTiles.Count == 0)
+                {
+                    terrainHeights.Clear();
+                    Debug.LogWarning("[HexEnvironmentManager] No eligible environment tiles for terrain height. Consider reducing terrain margin or increasing grid radius.");
+                    return;
+                }
+
+                // Step 1: Assign initial heights using noise
+                Dictionary<HexCoordinates, float> heights = new Dictionary<HexCoordinates, float>();
+                float stepSize = 0.25f; // Max vertical difference between neighbors
+                int maxSteps = Mathf.Max(1, Mathf.RoundToInt(maxTerrainHeight / stepSize));
+                foreach (var tileCoord in eligibleTiles)
+                {
+                    float noise = Mathf.PerlinNoise(
+                        (tileCoord.q + noiseOffset) * noiseScale,
+                        (tileCoord.r + noiseOffset) * noiseScale);
+                    float rawHeight = noise * maxTerrainHeight;
+                    float quantized = Mathf.Round(rawHeight / stepSize) * stepSize;
+                    heights[tileCoord] = Mathf.Clamp(quantized, 0f, maxTerrainHeight);
+                }
+
+                // Step 2: Smoothing passes to enforce max vertical difference
+                ApplyTerrainConstraints(heights, stepSize);
+
+                // Step 3: Contour level logic - raise tiles if all neighbors are at same level
+                int contourPasses = 2; // Number of passes for plateau formation
+                for (int pass = 0; pass < contourPasses; pass++)
+                {
+                    var newHeights = new Dictionary<HexCoordinates, float>(heights);
+                    foreach (var tileCoord in eligibleTiles)
+                    {
+                        float currentHeight = heights[tileCoord];
+                        // Get environment neighbors
+                        List<HexCoordinates> neighbors = new List<HexCoordinates>();
+                        foreach (var dir in HEX_DIRECTIONS)
+                        {
+                            var neighborCoord = new HexCoordinates(tileCoord.q + dir.q, tileCoord.r + dir.r);
+                            if (eligibleTiles.Contains(neighborCoord))
+                                neighbors.Add(neighborCoord);
+                        }
+                        if (neighbors.Count == 0) continue;
+                        bool allSame = neighbors.All(n => Mathf.Approximately(heights[n], currentHeight));
+                        if (allSame)
+                        {
+                            float newHeight = Mathf.Clamp(currentHeight + stepSize, 0f, maxTerrainHeight);
+                            // Check vertical spacing rule
+                            bool spacingOk = neighbors.All(n => Mathf.Abs(heights[n] - newHeight) <= stepSize);
+                            if (spacingOk && newHeight > currentHeight)
+                            {
+                                newHeights[tileCoord] = newHeight;
+                            }
+                        }
+                    }
+                    heights = newHeights;
+                }
+
+                // Step 4: Copy final heights to terrainHeights
+                terrainHeights.Clear();
+                foreach (var heightKvp in heights)
+                {
+                    terrainHeights[heightKvp.Key] = heightKvp.Value;
                 }
                 
                 hexData.gameObject.transform.position = basePos;
@@ -494,6 +633,26 @@ public class HexEnvironmentManager : MonoBehaviour
     [TitleGroup("Debug/Hex Type Visibility")]
     [SerializeField, Tooltip("Show environment hexes")]
     private bool showEnvironment = false;
+    
+    [TabGroup("Debug", "🔧 Debug & Visualization")]
+    [TitleGroup("Debug/Terrain Visualization")]
+    [SerializeField, Tooltip("Show terrain height values as labels")]
+    private bool showTerrainHeights = false;
+    
+    [TabGroup("Debug", "🔧 Debug & Visualization")]
+    [TitleGroup("Debug/Terrain Visualization")]
+    [SerializeField, Tooltip("Highlight environment tiles affected by terrain margin")]
+    private bool showTerrainMargin = false;
+    
+    [TabGroup("Debug", "🔧 Debug & Visualization")]
+    [TitleGroup("Debug/Terrain Visualization")]
+    [SerializeField, Tooltip("Color for environment tiles outside terrain margin")]
+    private Color terrainEligibleColor = new Color(0.4f, 0.9f, 0.4f, 1f);
+    
+    [TabGroup("Debug", "🔧 Debug & Visualization")]
+    [TitleGroup("Debug/Terrain Visualization")]
+    [SerializeField, Tooltip("Color for environment tiles inside terrain margin")]
+    private Color terrainMarginColor = new Color(0.9f, 0.6f, 0.3f, 1f);
     
     [TabGroup("Debug", "🔧 Debug & Visualization")]
     [TitleGroup("Debug/Hex Colors")]
@@ -2494,7 +2653,63 @@ public class HexEnvironmentManager : MonoBehaviour
         Debug.Log("[HexEnvironmentManager] Calculating terrain heights for environment tiles");
         terrainHeights.Clear();
         
-        // First pass: Calculate raw noise heights for all environment tiles
+        // Constants for terrain generation
+        const float TILE_THICKNESS = 0.25f;
+        
+        // Step 1: Identify which environment tiles are eligible for terrain height (outside margin)
+        HashSet<HexCoordinates> eligibleTiles = GetEnvironmentTilesOutsideMargin();
+        
+        Debug.Log($"[HexEnvironmentManager] Found {eligibleTiles.Count} environment tiles eligible for terrain height (margin: {terrainMargin})");
+        
+        if (eligibleTiles.Count == 0)
+        {
+            Debug.Log("[HexEnvironmentManager] No environment tiles outside margin found - using all environment tiles");
+            // Fallback: use all environment tiles if margin is too restrictive
+            foreach (var kvp in hexGrid)
+            {
+                if (kvp.Value.type == HexType.Environment)
+                {
+                    eligibleTiles.Add(kvp.Key);
+                }
+            }
+        }
+        
+        // Step 2: Generate initial noise-based heights for eligible tiles
+        Dictionary<HexCoordinates, float> rawHeights = new Dictionary<HexCoordinates, float>();
+        
+        foreach (var coord in eligibleTiles)
+        {
+            Vector3 worldPos = HexToWorldPosition(coord);
+            float noiseValue = Mathf.PerlinNoise(
+                (worldPos.x + noiseOffset) / noiseScale,
+                (worldPos.z + noiseOffset) / noiseScale
+            );
+            
+            // Convert noise to height steps (each step is TILE_THICKNESS)
+            float desiredHeight = noiseValue * maxTerrainHeight;
+            int heightSteps = Mathf.RoundToInt(desiredHeight / TILE_THICKNESS);
+            float steppedHeight = heightSteps * TILE_THICKNESS;
+            
+            rawHeights[coord] = steppedHeight;
+        }
+        
+        // Step 3: Apply constraint-based smoothing to ensure no gaps
+        Debug.Log($"[HexEnvironmentManager] Applying terrain constraints with {smoothingPasses} passes");
+        ApplyTerrainConstraints(rawHeights, TILE_THICKNESS);
+        
+        // Step 4: Set final heights
+        foreach (var kvp in rawHeights)
+        {
+            terrainHeights[kvp.Key] = kvp.Value;
+        }
+        
+        Debug.Log($"[HexEnvironmentManager] Calculated terrain heights for {terrainHeights.Count} environment tiles (margin: {terrainMargin} units)");
+    }
+    
+    private HashSet<HexCoordinates> GetEnvironmentTilesOutsideMargin()
+    {
+        HashSet<HexCoordinates> eligibleTiles = new HashSet<HexCoordinates>();
+        
         foreach (var kvp in hexGrid)
         {
             var coord = kvp.Key;
@@ -2502,71 +2717,97 @@ public class HexEnvironmentManager : MonoBehaviour
             
             if (hexData.type == HexType.Environment)
             {
-                Vector3 worldPos = HexToWorldPosition(coord);
-                float noiseValue = Mathf.PerlinNoise(
-                    (worldPos.x + noiseOffset) / noiseScale,
-                    (worldPos.z + noiseOffset) / noiseScale
-                );
+                float distanceToGameplay = GetDistanceToNearestGameplayTile(coord);
                 
-                // Convert noise (0-1) to height with steps
-                float rawHeight = noiseValue * maxTerrainHeight;
-                float steppedHeight = Mathf.Round(rawHeight / heightStepAmount) * heightStepAmount;
-                
-                terrainHeights[coord] = steppedHeight;
+                if (distanceToGameplay >= terrainMargin)
+                {
+                    eligibleTiles.Add(coord);
+                }
             }
         }
         
-        // Second pass: Apply smoothing to reduce harsh transitions
-        if (heightSmoothing > 0f)
-        {
-            SmoothTerrainHeights();
-        }
-        
-        Debug.Log($"[HexEnvironmentManager] Calculated terrain heights for {terrainHeights.Count} environment tiles");
+        return eligibleTiles;
     }
     
-    private void SmoothTerrainHeights()
+    private float GetDistanceToNearestGameplayTile(HexCoordinates coord)
     {
-        Dictionary<HexCoordinates, float> smoothedHeights = new Dictionary<HexCoordinates, float>();
+        float minDistance = float.MaxValue;
         
-        foreach (var kvp in terrainHeights)
+        foreach (var kvp in hexGrid)
         {
-            var coord = kvp.Key;
-            var currentHeight = kvp.Value;
+            var otherCoord = kvp.Key;
+            var otherHexData = kvp.Value;
             
-            // Get adjacent environment tiles
-            List<float> neighborHeights = new List<float> { currentHeight };
-            
-            foreach (var direction in HEX_DIRECTIONS)
+            // Check if this is a gameplay tile (defender, pathway, center hub, edge spawn)
+            if (otherHexData.type == HexType.DefenderSpot || 
+                otherHexData.type == HexType.Pathway || 
+                otherHexData.type == HexType.CenterHub || 
+                otherHexData.type == HexType.EdgeSpawn)
             {
-                var neighborCoord = new HexCoordinates(coord.q + direction.q, coord.r + direction.r);
-                if (terrainHeights.ContainsKey(neighborCoord))
+                float distance = GetHexDistance(coord, otherCoord);
+                if (distance < minDistance)
                 {
-                    neighborHeights.Add(terrainHeights[neighborCoord]);
+                    minDistance = distance;
+                }
+            }
+        }
+        
+        return minDistance == float.MaxValue ? 0f : minDistance;
+    }
+    
+    private void ApplyTerrainConstraints(Dictionary<HexCoordinates, float> heights, float tileThickness)
+    {
+        // Apply multiple smoothing passes to ensure height constraints are met
+        for (int pass = 0; pass < smoothingPasses; pass++)
+        {
+            Dictionary<HexCoordinates, float> adjustedHeights = new Dictionary<HexCoordinates, float>(heights);
+            
+            foreach (var coord in heights.Keys)
+            {
+                float currentHeight = heights[coord];
+                List<float> neighborHeights = new List<float>();
+                
+                // Get neighbor heights
+                foreach (var direction in HEX_DIRECTIONS)
+                {
+                    var neighborCoord = new HexCoordinates(coord.q + direction.q, coord.r + direction.r);
+                    if (heights.ContainsKey(neighborCoord))
+                    {
+                        neighborHeights.Add(heights[neighborCoord]);
+                    }
+                }
+                
+                if (neighborHeights.Count > 0)
+                {
+                    // Find the maximum allowable height based on neighbors
+                    float maxAllowedHeight = float.MaxValue;
+                    float minAllowedHeight = float.MinValue;
+                    
+                    foreach (float neighborHeight in neighborHeights)
+                    {
+                        // Cannot be more than one tile thickness above any neighbor
+                        maxAllowedHeight = Mathf.Min(maxAllowedHeight, neighborHeight + tileThickness);
+                        // Cannot be more than one tile thickness below any neighbor
+                        minAllowedHeight = Mathf.Max(minAllowedHeight, neighborHeight - tileThickness);
+                    }
+                    
+                    // Clamp the height to ensure no gaps
+                    float constrainedHeight = Mathf.Clamp(currentHeight, minAllowedHeight, maxAllowedHeight);
+                    
+                    // Ensure it's still quantized to tile thickness
+                    int heightSteps = Mathf.RoundToInt(constrainedHeight / tileThickness);
+                    constrainedHeight = heightSteps * tileThickness;
+                    
+                    adjustedHeights[coord] = constrainedHeight;
                 }
             }
             
-            // Calculate weighted average (current height has more influence)
-            float weightedSum = currentHeight * (1f - heightSmoothing);
-            float totalWeight = 1f - heightSmoothing;
-            
-            for (int i = 1; i < neighborHeights.Count; i++)
+            // Update heights for next pass
+            foreach (var kvp in adjustedHeights)
             {
-                float neighborWeight = heightSmoothing / (neighborHeights.Count - 1);
-                weightedSum += neighborHeights[i] * neighborWeight;
-                totalWeight += neighborWeight;
+                heights[kvp.Key] = kvp.Value;
             }
-            
-            float smoothedHeight = weightedSum / totalWeight;
-            
-            // Re-apply stepping after smoothing
-            smoothedHeight = Mathf.Round(smoothedHeight / heightStepAmount) * heightStepAmount;
-            
-            smoothedHeights[coord] = smoothedHeight;
         }
-        
-        // Update terrain heights with smoothed values
-        terrainHeights = smoothedHeights;
     }
     
     private float GetTerrainHeightAt(HexCoordinates coord)
@@ -2588,6 +2829,10 @@ public class HexEnvironmentManager : MonoBehaviour
             return;
         }
         
+        Debug.Log($"[HexEnvironmentManager] Starting instantiation of {hexGrid.Count} hex GameObjects");
+        int environmentCount = 0;
+        int terrainHeightCount = 0;
+        
         foreach (var kvp in hexGrid)
         {
             var coord = kvp.Key;
@@ -2598,8 +2843,13 @@ public class HexEnvironmentManager : MonoBehaviour
             // Apply terrain height for environment tiles
             if (hexData.type == HexType.Environment && enableTerrainHeight)
             {
+                environmentCount++;
                 float terrainHeight = GetTerrainHeightAt(coord);
-                worldPos.y += terrainHeight;
+                if (terrainHeight > 0f)
+                {
+                    terrainHeightCount++;
+                    worldPos.y += terrainHeight;
+                }
             }
             
             // Only instantiate the hexPrefab - HexTile component will handle behavior
@@ -2633,6 +2883,8 @@ public class HexEnvironmentManager : MonoBehaviour
                 Debug.LogWarning($"[HexEnvironmentManager] HexTile component not found on hex prefab for {coord}_{hexData.type}");
             }
         }
+        
+        Debug.Log($"[HexEnvironmentManager] Instantiated {hexGrid.Count} hex GameObjects. Environment tiles: {environmentCount}, with terrain height: {terrainHeightCount}");
     }
     
     private HexCoordinates FindClosestHexInDirection(HexCoordinates from, Vector3 worldDirection)
@@ -2812,6 +3064,21 @@ public class HexEnvironmentManager : MonoBehaviour
                 
                 // Get enhanced color for hex type - ensure solid color
                 Color hexColor = GetEnhancedColorForHexType(hexData.type, hexData.laneId);
+                
+                // Override color for terrain visualization if enabled
+                if (showTerrainMargin && hexData.type == HexType.Environment)
+                {
+                    float distanceToGameplay = GetDistanceToNearestGameplayTile(coord);
+                    if (distanceToGameplay >= terrainMargin)
+                    {
+                        hexColor = terrainEligibleColor;
+                    }
+                    else
+                    {
+                        hexColor = terrainMarginColor;
+                    }
+                }
+                
                 hexColor.a = gizmoAlpha;
                 Gizmos.color = hexColor;
                 
@@ -2825,6 +3092,23 @@ public class HexEnvironmentManager : MonoBehaviour
                     string label = GetHexTypeLabel(hexData.type, hexData.laneId);
                     if (showCoordinates)
                         label += $"\n{hexData.coordinates}";
+                    
+                    // Add terrain height information
+                    if (showTerrainHeights && hexData.type == HexType.Environment)
+                    {
+                        float terrainHeight = GetTerrainHeightAt(coord);
+                        if (terrainHeight > 0f)
+                        {
+                            label += $"\nH:{terrainHeight:F2}";
+                        }
+                        
+                        if (showTerrainMargin)
+                        {
+                            float distanceToGameplay = GetDistanceToNearestGameplayTile(coord);
+                            label += $"\nD:{distanceToGameplay:F1}";
+                        }
+                    }
+                    
                     UnityEditor.Handles.Label(pos + Vector3.up * (hexSize * 0.2f), label);
                     #endif
                 }
