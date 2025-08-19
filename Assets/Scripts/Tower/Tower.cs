@@ -5,8 +5,9 @@ using DG.Tweening;
 public class Tower : MonoBehaviour
 {
     //VARIABLES
-    [SerializeField] private float maxhealth = 100.0f;
+    [SerializeField] public float maxhealth = 100.0f;
     [SerializeField] public float currentHealth = 100.0f;
+    [SerializeField] public RadialHealth radialHealth; 
 
     [SerializeField] private float damage = 100.0f;
     [SerializeField] private float attackRange = 5.0f;
@@ -37,8 +38,14 @@ public class Tower : MonoBehaviour
 
     void Start()
     {
-        // Set up health
         currentHealth = maxhealth;
+        radialHealth.Initialize(maxhealth);
+    }
+
+    void OnEnable()
+    {
+        currentHealth = maxhealth;
+        radialHealth.Initialize(maxhealth);
     }
 
     // Using overlap sphere for enemy detection instead of collider triggers for better performance control
@@ -131,9 +138,16 @@ public class Tower : MonoBehaviour
         
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(0, currentHealth);
-        
+
+        // Update radial health bar
+        if (radialHealth != null)
+        {
+            float delta = -damageAmount;
+            radialHealth.ChangeHealth(delta);
+        }
+
         //Debug.Log($"Tower took {damageAmount} damage. Health: {currentHealth}/{maxhealth}");
-        
+
         // Check if tower should die
         if (currentHealth <= 0)
         {

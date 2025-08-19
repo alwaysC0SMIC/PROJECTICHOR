@@ -135,6 +135,7 @@ public class HexTile : MonoBehaviour, IInteractable
         if (CanBuild())
         {
             buildObject.SetActive(true);
+            //buildObject.GetComponent<Tower>().radialHealth.Initialize(GetComponent<Tower>().maxhealth);
             isOccupied = true;
             
             // Show hexagonUI when a defender is built
