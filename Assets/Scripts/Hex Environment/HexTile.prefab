@@ -1389,6 +1389,7 @@ MonoBehaviour:
   previewObject: {fileID: 1489850538592677727}
   buildObject: {fileID: 8275540925748176510}
   hexagonUI: {fileID: 7098362735871319931}
+  towerScript: {fileID: 8219796405013255238}
 --- !u!114 &3518043007260637499
 MonoBehaviour:
   m_ObjectHideFlags: 0

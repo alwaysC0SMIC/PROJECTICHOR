@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
-
 public class Tower : MonoBehaviour
 {
     //VARIABLES
@@ -21,11 +20,20 @@ public class Tower : MonoBehaviour
     private Transform currentTarget;
     private bool isRotating = false;
     //private bool isDead = false;
-    
+
     // Optimization: Track enemies in range
     private List<Transform> enemiesInRange = new List<Transform>();
 
     [SerializeField] LayerMask enemyLayerMask;
+
+    // Reference to owning HexTile
+    private HexTile hexTile;
+
+    // Call this to set the owning tile after instantiation
+    public void SetOwningTile(HexTile tile)
+    {
+        hexTile = tile;
+    }
 
     void Start()
     {
@@ -132,15 +140,15 @@ public class Tower : MonoBehaviour
             Die();
         }
     }
-    
+
     // Method to handle tower death
     private void Die()
     {
-        
-
         rotationSequence.Kill();
         currentTarget = null;
+        hexTile.OnTowerDestroyed();
         gameObject.SetActive(false);
+        
     }
 
     private void Attack(Transform target)

@@ -102,6 +102,7 @@ public class HexTile : MonoBehaviour, IInteractable
     [SerializeField] GameObject buildObject;
 
     [SerializeField] GameObject hexagonUI;
+    [SerializeField] Tower towerScript;
     //[SerializeField] GameObject environmentObject;
     //[SerializeField] GameObject exteriorDecorativeObject;
 
@@ -118,6 +119,8 @@ public class HexTile : MonoBehaviour, IInteractable
 
         previewObject.SetActive(false);
         buildObject.SetActive(false);
+
+        towerScript.SetOwningTile(this);
     }
 
     private void OnDestroy()
@@ -154,20 +157,13 @@ public class HexTile : MonoBehaviour, IInteractable
         if (hexType == HexType.DefenderSpot)
         {
             isOccupied = false;
+            hexagonUI.SetActive(false);
+            buildObject.SetActive(false);
+            transformSpring.SetTargetPosition(originalPosition);
+            //previewObject.SetActive(true);
             
-            // Hide hexagonUI when defender is destroyed
-            if (hexagonUI != null)
-            {
-                hexagonUI.SetActive(false);
-            }
-            
-            // Hide build object if it was active
-            if (buildObject != null)
-            {
-                buildObject.SetActive(false);
-            }
-            
-            Debug.Log($"[HexTile] Tower destroyed on defender spot at {coordinates} - hexagonUI hidden");
+
+            Debug.Log($"[HexTile] Tower destroyed on defender spot at {coordinates} - tile reverted to original state");
         }
     }
 
@@ -233,6 +229,14 @@ public class HexTile : MonoBehaviour, IInteractable
             if (isExteriorEnvironment)
             {
                 ActivateExteriorDecorativeObject();
+            }
+
+            // Remove MeshCollider if present
+            MeshCollider meshCol = GetComponent<MeshCollider>();
+            if (meshCol != null)
+            {
+                Destroy(meshCol);
+                Debug.Log($"[HexTile] Removed MeshCollider from environment tile {gameObject.name}");
             }
         }
         // else if (environmentObject != null)
