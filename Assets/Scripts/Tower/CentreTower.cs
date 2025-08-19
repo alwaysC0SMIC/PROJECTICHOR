@@ -7,11 +7,13 @@ public class CentreTower : MonoBehaviour
     //VARIABLES
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float currentHealth;
+    [SerializeField] private RadialHealth radialHealth;
     private EventBinding<CentreTowerAttackEvent> centreTowerAttackBinding;
 
     void Start()
     {
         currentHealth = maxHealth;
+        radialHealth.Initialize(maxHealth);
         centreTowerAttackBinding = new EventBinding<CentreTowerAttackEvent>(OnCentreTowerAttacked);
         EventBus<CentreTowerAttackEvent>.Register(centreTowerAttackBinding);
     }
@@ -19,6 +21,7 @@ public class CentreTower : MonoBehaviour
     private void OnCentreTowerAttacked(CentreTowerAttackEvent @event)
     {
         currentHealth -= @event.damageAmount;
+        radialHealth.ChangeHealth(-@event.damageAmount);
         HealthCheck();
     }
 

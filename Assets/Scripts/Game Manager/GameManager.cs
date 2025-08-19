@@ -5,6 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private HexEnvironmentManager hexEnvironmentManager;
+    [SerializeField] private GameObject deathScreenPrefab;
     public GameState currentState;
 
     [Header("CURRENCY")]
@@ -16,6 +17,8 @@ public class GameManager : MonoBehaviour
 
     void OnEnable()
     {
+        deathScreenPrefab.SetActive(false);
+
         gameStateBinding = new EventBinding<UpdateGameStateEvent>(OnGameStateUpdated);
         EventBus<UpdateGameStateEvent>.Register(gameStateBinding);
 
@@ -38,6 +41,16 @@ public class GameManager : MonoBehaviour
     private void OnGameStateUpdated(UpdateGameStateEvent @event)
     {
         currentState = @event.gameState;
+
+        if(currentState == GameState.Lose)
+        {
+            deathScreenPrefab.SetActive(true);
+        }
+        else if(currentState == GameState.Win)
+        {
+            // Handle win state logic here, e.g., show win screen
+            //Debug.Log("You Win!");
+        }
     }
 
     void OnDisable()
