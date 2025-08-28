@@ -11,6 +11,7 @@ using UnityEngine.UIElements;
 public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     //VARIABLES
+    [SerializeField] private List<SO_Defender> defendersInHand;
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private int handSize = 5;
     private int maxHandSize;
@@ -121,10 +122,12 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
         {
             GameObject card = Instantiate(cardPrefab, transform);
             
+            card.GetComponent<FlexCardUI>().InitializeCard(defendersInHand[0]);
+            
             // Assign unique color and name
             //Color cardColor = cardColors[i % cardColors.Length];
             //string colorName = colorNames[i % colorNames.Length];
-            
+
             card.name = $"Card {i + 1}";
             
             //card.GetComponent<UnityEngine.UI.Image>().color = cardColor;

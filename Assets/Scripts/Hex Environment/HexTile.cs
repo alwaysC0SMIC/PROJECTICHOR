@@ -101,7 +101,7 @@ public class HexTile : MonoBehaviour, IInteractable
     [SerializeField] GameObject previewObject;
     [SerializeField] GameObject buildObject;
 
-    [SerializeField] GameObject hexagonUI;
+    // [SerializeField] GameObject hexagonUI;
     [SerializeField] Tower towerScript;
     //[SerializeField] GameObject environmentObject;
     //[SerializeField] GameObject exteriorDecorativeObject;
@@ -139,10 +139,10 @@ public class HexTile : MonoBehaviour, IInteractable
             isOccupied = true;
             
             // Show hexagonUI when a defender is built
-            if (hexagonUI != null)
-            {
-                hexagonUI.SetActive(true);
-            }
+            // if (hexagonUI != null)
+            // {
+            //     hexagonUI.SetActive(true);
+            // }
             
             Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
         }
@@ -158,7 +158,7 @@ public class HexTile : MonoBehaviour, IInteractable
         if (hexType == HexType.DefenderSpot)
         {
             isOccupied = false;
-            hexagonUI.SetActive(false);
+            //hexagonUI.SetActive(false);
             buildObject.SetActive(false);
             transformSpring.SetTargetPosition(originalPosition);
             //previewObject.SetActive(true);
@@ -209,14 +209,14 @@ public class HexTile : MonoBehaviour, IInteractable
         }
 
         // Show hexagonUI only for occupied defender spots
-        if (hexType == HexType.DefenderSpot)
-        {
-            hexagonUI.SetActive(isOccupied);
-        }
-        else
-        {
-            hexagonUI.SetActive(false);
-        }
+        // if (hexType == HexType.DefenderSpot)
+        // {
+        //     hexagonUI.SetActive(isOccupied);
+        // }
+        // else
+        // {
+        //     hexagonUI.SetActive(false);
+        // }
 
         if(hexType == HexType.Environment)
         {
@@ -367,18 +367,18 @@ public class HexTile : MonoBehaviour, IInteractable
         if (newType == HexType.DefenderSpot)
         {
             // Show hexagonUI only if occupied
-            if (hexagonUI != null)
-            {
-                hexagonUI.SetActive(isOccupied);
-            }
+            // if (hexagonUI != null)
+            // {
+            //     hexagonUI.SetActive(isOccupied);
+            // }
         }
         else
         {
             // Hide hexagonUI for non-defender tiles
-            if (hexagonUI != null)
-            {
-                hexagonUI.SetActive(false);
-            }
+            // if (hexagonUI != null)
+            // {
+            //     hexagonUI.SetActive(false);
+            // }
         }
     }
     

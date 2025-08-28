@@ -10,6 +10,7 @@ using static Flexalon.FlexalonInteractable;
 public class FlexCardUI : MonoBehaviour
 {
     //VARIABLES
+    [SerializeField] private SO_Defender defenderData;
     [SerializeField] Image backgroundImage;
     [SerializeField] private FlexalonObject flexalonObject;
     [SerializeField] private FlexalonLerpAnimator flexalonAnimator;
@@ -29,14 +30,20 @@ public class FlexCardUI : MonoBehaviour
         flexalonInteractable.DragEnd.AddListener(OnDragEnd);
     }
 
+    public void InitializeCard(SO_Defender defender)
+    {
+        defenderData = defender;
+        
+    }
+
     private void OnDragEnd(FlexalonInteractable arg0)
     {
-        backgroundImage.color = new Color(1, 1, 1, 1f); 
+        backgroundImage.color = new Color(1, 1, 1, 1f);
         EventBus<ToggleGameplayCamEvent>.Raise(new ToggleGameplayCamEvent { allowCam = true });
         EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = false });
 
         //flexalonObject.Rotation = Quaternion.Euler(0, 0, 0);
-        
+
     }
 
     private void OnDragStart(FlexalonInteractable arg0)

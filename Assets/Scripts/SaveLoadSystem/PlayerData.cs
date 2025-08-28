@@ -26,6 +26,20 @@ public class PlayerSaveData
 
 public class PlayerData : MonoBehaviour
 {
+    [BoxGroup("CURRENT STATS")]
+    [SerializeField] public float Coins => currentData.coins;
+
+    [BoxGroup("CURRENT STATS")]
+    [SerializeField] public float Reputation => currentData.reputation;
+
+    [BoxGroup("CURRENT STATS")]
+    [SerializeField] public int XP => currentData.currentXP;
+
+    [BoxGroup("CURRENT STATS")]
+    [SerializeField] public int Level => currentData.currentLevel;
+
+    public int XPToNextLevel => Level * 100; // Optional: Use a dynamic value 
+
     public static PlayerData Instance { get; private set; }
 
     [BoxGroup("Config")]
@@ -115,12 +129,7 @@ public class PlayerData : MonoBehaviour
 
     #region Public API
 
-    public float Coins => currentData.coins;
-    public float Reputation => currentData.reputation;
-    public int XP => currentData.currentXP;
-    public int Level => currentData.currentLevel;
-
-    public int XPToNextLevel => Level * 100; // Optional: Use a dynamic value
+    
 
     public void AddXP(int amount)
     {
