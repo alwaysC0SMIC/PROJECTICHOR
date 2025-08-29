@@ -15,6 +15,20 @@ public class GameManager : MonoBehaviour
     private EventBinding<UpdateGameStateEvent> gameStateBinding;
     private EventBinding<AddOrRemoveIchorEvent> ichorEventBinding;
 
+    public static GameManager Instance { get; private set; }
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        //DontDestroyOnLoad(gameObject);
+    }
+
     void OnEnable()
     {
         deathScreenPrefab.SetActive(false);
@@ -72,7 +86,10 @@ public class GameManager : MonoBehaviour
 
     private void Setup()
     {
-        currentIchorAmount = ichorStartingAmount;
+       // currentIchorAmount = ichorStartingAmount;
+
+        EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent { addOrRemove = true, ichorAmount = ichorStartingAmount });
+
         EventBus<UpdateGameStateEvent>.Raise(new UpdateGameStateEvent { gameState = GameState.Intro });
         hexEnvironmentManager.GenerateTowerDefenseEnvironment();
     }

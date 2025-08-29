@@ -1,7 +1,9 @@
 using System;
 using AllIn1SpringsToolkit;
+using DG.Tweening;
 using Flexalon;
 using Nova;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,18 +24,61 @@ public class FlexCardUI : MonoBehaviour
     [SerializeField] private TransformSpringComponent transformSpringComponent;
     [SerializeField] private float rotationForce = 5F;
 
+
+    //UI
+    // [SerializeField] private TMP_Text cardNameText;
+    // //[SerializeField] private TMP_Text cardDescriptionText;
+    // [SerializeField] private TMP_Text cardCostText;
+
+
     void Start()
     {
+        flexalonInteractable.Clicked.AddListener(ClickCheck);
         flexalonInteractable.HoverStart.AddListener(HoverAnimation);
         flexalonInteractable.HoverEnd.AddListener(UnHoverAnimation);
         flexalonInteractable.DragStart.AddListener(OnDragStart);
         flexalonInteractable.DragEnd.AddListener(OnDragEnd);
     }
 
+    private void ClickCheck(FlexalonInteractable arg0)
+    {
+        if (GameManager.Instance.currentIchorAmount < defenderData.cost)
+        {
+            AnimateCostTextColor();
+        }
+
+    }
+    private void AnimateCostTextColor()
+    {
+        // if (cardCostText != null)
+        // {
+        //     Color startColor = Color.white;
+        //     Color endColor = Color.red;
+        //     float halfDuration = 0.25f;
+        //     DOTween.To(
+        //         () => cardCostText.color,
+        //         x => cardCostText.color = x,
+        //         endColor,
+        //         halfDuration
+        //     ).OnComplete(() => {
+        //         DOTween.To(
+        //             () => cardCostText.color,
+        //             x => cardCostText.color = x,
+        //             startColor,
+        //             halfDuration
+        //         );
+        //     });
+        // }
+    }
+    
+
     public void InitializeCard(SO_Defender defender)
     {
         defenderData = defender;
-        
+
+        // cardNameText.text = defenderData.defenderName;
+        // //cardDescriptionText.text = defenderData.defenderDescription;
+        // cardCostText.text = "Cost: " + defenderData.cost.ToString();
     }
 
     private void OnDragEnd(FlexalonInteractable arg0)
@@ -74,22 +119,22 @@ public class FlexCardUI : MonoBehaviour
     {
         // Get mouse position in screen space
         Vector2 mousePos = Input.mousePosition;
-        
+
         // Get the background image's RectTransform
         RectTransform imageRect = backgroundImage.rectTransform;
-        
+
         // Convert mouse position to local position relative to the image
         Vector2 localMousePos;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            imageRect, 
-            mousePos, 
-            Camera.main, 
+            imageRect,
+            mousePos,
+            Camera.main,
             out localMousePos
         );
-        
+
         // Check which half of the image the mouse is over (left half = negative X, right half = positive X)
         bool mouseOnLeftHalf = localMousePos.x < 0;
-        
+
         // Apply rotation based on which half is being hovered
         Vector3 rotationDirection;
         if (mouseOnLeftHalf)
@@ -104,11 +149,20 @@ public class FlexCardUI : MonoBehaviour
             rotationDirection = Vector3.forward * -rotationForce;
             Debug.Log($"[FlexCardUI] Mouse on RIGHT half of image - rotating counter-clockwise");
         }
-        
+
         transformSpringComponent.AddVelocityRotation(rotationDirection);
         flexalonObject.HeightOfParent = hoverHeight;
-    }
 
+        if (GameManager.Instance.currentIchorAmount < defenderData.cost)
+        {
+            flexalonInteractable.Draggable = false;
+        }
+        else
+        { 
+            flexalonInteractable.Draggable = true;
+        }
+            
+    }
 
     public void EnableCard()
     {

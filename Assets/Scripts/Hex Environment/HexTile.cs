@@ -121,9 +121,12 @@ public class HexTile : MonoBehaviour, IInteractable
         foreach (var preview in previewPrefabs)
             preview.SetActive(false);
 
-            towerScript.gameObject.SetActive(false);
 
         towerScript.SetOwningTile(this);
+        towerScript.gameObject.SetActive(false);
+
+        
+        //towerScript.gameObject.SetActive(false);
     }
 
     private void OnDestroy()
@@ -147,6 +150,9 @@ public class HexTile : MonoBehaviour, IInteractable
                 StartCoroutine(DelayedInitializeTower(defender));
 
                 isOccupied = true;
+                EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = false, ichorAmount = defender.cost });
+
+
                 Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
             }
             else
