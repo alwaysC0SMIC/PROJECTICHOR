@@ -11,6 +11,7 @@ public class SO_Defender : ScriptableObject
 
 
     [Header("Defender Info")]
+    [SerializeField] public GameObject previewDefenderPrefab;
     [SerializeField] public GameObject defenderPrefab;
     [SerializeField] public float range;
     [SerializeField] public float attackSpeed;

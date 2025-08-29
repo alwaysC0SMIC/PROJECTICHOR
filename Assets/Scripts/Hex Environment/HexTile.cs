@@ -1,6 +1,7 @@
 using UnityEngine;
 using Sirenix.OdinInspector;
 using AllIn1SpringsToolkit;
+using System.Collections.Generic;
 
 /// <summary>
 /// Component attached to individual hex tile GameObjects to store their data and type.
@@ -98,8 +99,8 @@ public class HexTile : MonoBehaviour, IInteractable
     public bool isOccupied = false;
     private bool isBuildModeActive = false; // Track build mode state
 
-    [SerializeField] GameObject previewObject;
-    [SerializeField] GameObject buildObject;
+    [SerializeField] List<GameObject> previewPrefabs;
+    //[SerializeField] GameObject towerObject;
 
     // [SerializeField] GameObject hexagonUI;
     [SerializeField] Tower towerScript;
@@ -117,8 +118,10 @@ public class HexTile : MonoBehaviour, IInteractable
         if (transformSpring == null)
             transformSpring = GetComponent<TransformSpringComponent>();
 
-        previewObject.SetActive(false);
-        buildObject.SetActive(false);
+        foreach (var preview in previewPrefabs)
+            preview.SetActive(false);
+
+            towerScript.gameObject.SetActive(false);
 
         towerScript.SetOwningTile(this);
     }
@@ -129,27 +132,39 @@ public class HexTile : MonoBehaviour, IInteractable
         RemoveEdgeSpawnLight();
     }
 
-    public void AttemptBuild()
+    public void AttemptBuild(SO_Defender defender)
     {
+        foreach (var preview in previewPrefabs)
+            preview.SetActive(false);
+
         // Only allow building on valid defender spots
         if (CanBuild())
         {
-            buildObject.SetActive(true);
-            //buildObject.GetComponent<Tower>().radialHealth.Initialize(GetComponent<Tower>().maxhealth);
-            isOccupied = true;
-            
-            // Show hexagonUI when a defender is built
-            // if (hexagonUI != null)
-            // {
-            //     hexagonUI.SetActive(true);
-            // }
-            
-            Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
+            if (defender != null)
+            {
+                // Deactivate all build prefabs first
+                towerScript.gameObject.SetActive(true);
+                StartCoroutine(DelayedInitializeTower(defender));
+
+                isOccupied = true;
+                Debug.Log($"[HexTile] Successfully built on defender spot at {coordinates}");
+            }
+            else
+            {
+                Debug.LogWarning("NO DEFENDER DATA ATTACHED IN ATTEMPT BUILD");
+            }
+
         }
         else
         {
             Debug.LogWarning($"[HexTile] Cannot build on {hexType} tile at {coordinates} - Occupied: {isOccupied}");
         }
+    }
+
+    private System.Collections.IEnumerator DelayedInitializeTower(SO_Defender defender)
+    {
+        yield return new WaitForSeconds(0.1f);
+        towerScript.Initialize(defender);
     }
 
     public void OnTowerDestroyed()
@@ -159,10 +174,15 @@ public class HexTile : MonoBehaviour, IInteractable
         {
             isOccupied = false;
             //hexagonUI.SetActive(false);
-            buildObject.SetActive(false);
+
+            //buildPrefabs.SetActive(false);
+
+            foreach (var preview in previewPrefabs)
+                preview.SetActive(false);
+
             transformSpring.SetTargetPosition(originalPosition);
             //previewObject.SetActive(true);
-            
+
 
             Debug.Log($"[HexTile] Tower destroyed on defender spot at {coordinates} - tile reverted to original state");
         }
@@ -495,7 +515,8 @@ public class HexTile : MonoBehaviour, IInteractable
         // If build mode is disabled, hide preview immediately
         if (!isBuildModeActive)
         {
-            previewObject.SetActive(false);
+            foreach (var preview in previewPrefabs)
+            preview.SetActive(false);
         }
     }
 
@@ -594,21 +615,21 @@ public class HexTile : MonoBehaviour, IInteractable
         SpawnEdgeSpawnLight();
     }
 
-    [TitleGroup("Debug")]
-    [Button(ButtonSizes.Medium, Name = "🏗️ Test Build/Destroy")]
-    [GUIColor(1f, 0.5f, 0.2f)]
-    [ShowIf("@hexType == HexType.DefenderSpot")]
-    private void ToggleBuildDestroy()
-    {
-        if (isOccupied)
-        {
-            OnTowerDestroyed();
-        }
-        else
-        {
-            AttemptBuild();
-        }
-    }
+    // [TitleGroup("Debug")]
+    // [Button(ButtonSizes.Medium, Name = "🏗️ Test Build/Destroy")]
+    // [GUIColor(1f, 0.5f, 0.2f)]
+    // [ShowIf("@hexType == HexType.DefenderSpot")]
+    // private void ToggleBuildDestroy()
+    // {
+    //     if (isOccupied)
+    //     {
+    //         OnTowerDestroyed();
+    //     }
+    //     else
+    //     {
+    //         AttemptBuild();
+    //     }
+    // }
 
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🌲 Toggle Exterior Decorative")]
@@ -639,7 +660,7 @@ public class HexTile : MonoBehaviour, IInteractable
 
     #region IInteractable Implementation
     
-    public void OnHover()
+    public void OnHover(SO_Defender defenderData)
     {
         // Apply hover animation to tiles that should show hover effects (excludes pathway and edge spawn)
         if (hexType != HexType.Pathway && hexType != HexType.EdgeSpawn)
@@ -668,8 +689,29 @@ public class HexTile : MonoBehaviour, IInteractable
         // Only show preview for valid buildable tiles when in build mode
         if (ShouldShowPreview())
         {
-            previewObject.SetActive(true);
-            Debug.Log($"[HexTile] Preview activated for buildable hex {coordinates} (Build Mode: {isBuildModeActive})");
+            // Deactivate all previews first
+            foreach (var preview in previewPrefabs)
+                preview.SetActive(false);
+
+            // Find and activate the preview prefab whose name matches the string
+            GameObject match = null;
+            foreach (var preview in previewPrefabs)
+            {
+                if (preview != null && preview.name == defenderData.defenderName)
+                {
+                    match = preview;
+                    break;
+                }
+            }
+            if (match != null)
+            {
+                match.SetActive(true);
+                Debug.Log($"[HexTile] Preview '{name}' activated for buildable hex {coordinates} (Build Mode: {isBuildModeActive})");
+            }
+            else
+            {
+                Debug.LogWarning($"[HexTile] No preview prefab found with name '{name}' on tile at {coordinates}");
+            }
         }
     }
 
@@ -696,12 +738,8 @@ public class HexTile : MonoBehaviour, IInteractable
             }
         }
 
-        // Only hide preview object if it was potentially showing (build mode check)
-        if (previewObject.activeInHierarchy)
-        {
-            previewObject.SetActive(false);
-            Debug.Log($"[HexTile] Preview deactivated for hex {coordinates}");
-        }
+        foreach (var preview in previewPrefabs)
+            preview.SetActive(false);
     }
 
     public void OnClick()
@@ -717,6 +755,11 @@ public class HexTile : MonoBehaviour, IInteractable
         { 
             Debug.Log($"[HexTile] Invalid Build - Type: {hexType}, Occupied: {isOccupied}");
         }
+    }
+
+    public void OnHover()
+    {
+        throw new System.NotImplementedException();
     }
 
     #endregion

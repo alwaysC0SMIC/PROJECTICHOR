@@ -40,7 +40,7 @@ public class FlexCardUI : MonoBehaviour
     {
         backgroundImage.color = new Color(1, 1, 1, 1f);
         EventBus<ToggleGameplayCamEvent>.Raise(new ToggleGameplayCamEvent { allowCam = true });
-        EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = false });
+        EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = false, defenderToBuild = defenderData });
 
         //flexalonObject.Rotation = Quaternion.Euler(0, 0, 0);
 
@@ -49,7 +49,7 @@ public class FlexCardUI : MonoBehaviour
     private void OnDragStart(FlexalonInteractable arg0)
     {
         EventBus<ToggleGameplayCamEvent>.Raise(new ToggleGameplayCamEvent { allowCam = false });
-        EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = true });
+        EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = true, defenderToBuild = defenderData });
 
         //flexalonObject.Rotation = Quaternion.Euler(0, 0, 90F);
         backgroundImage.color = new Color(1, 1, 1, 0.1f); 

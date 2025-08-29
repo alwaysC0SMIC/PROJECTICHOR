@@ -6,9 +6,9 @@ using UnityEngine.InputSystem;
 
 public class Builder : MonoBehaviour
 {
-    [TitleGroup("Prefabs")]
-    [SerializeField] private GameObject testBuild;
-    [SerializeField] private GameObject previewTest;
+    // [TitleGroup("Prefabs")]
+    // [SerializeField] private GameObject testBuild;
+    // [SerializeField] private GameObject previewTest;
     
     [TitleGroup("Build State")]
     [LabelText("🔨 Build Mode Active")]
@@ -32,6 +32,8 @@ public class Builder : MonoBehaviour
     private HexTile lastLoggedHexTile; // For build mode tracking
     private HexTile lastHoveredHexTile; // For general hover tracking
     private Camera cam;
+
+    private SO_Defender buildData;
 
     void Start()
     {
@@ -85,9 +87,11 @@ public class Builder : MonoBehaviour
     private void OnBuildingEvent(BuildingEvent buildingEvent)
     {
         isBuildMode = buildingEvent.isBuilding;
+        buildData = buildingEvent.defenderToBuild;
         
-        Debug.Log($"[Builder] Build mode changed: {isBuildMode}");
-        
+
+        //Debug.Log($"[Builder] Build mode changed: {isBuildMode}");
+
         // Notify all hex tiles about build mode state change
         NotifyAllHexTilesOfBuildModeChange(isBuildMode);
         
@@ -99,7 +103,7 @@ public class Builder : MonoBehaviour
                 // Only attempt build if it's a valid buildable tile
                 if (lastLoggedHexTile.CanBuild())
                 {
-                    lastLoggedHexTile.AttemptBuild();
+                    lastLoggedHexTile.AttemptBuild(buildData);
                     Debug.Log($"[Builder] Building placed on valid defender spot at {lastLoggedHexTile.coordinates}");
                 }
                 else
@@ -134,7 +138,7 @@ public class Builder : MonoBehaviour
             // Call OnHover on the newly hovered hex
             if (currentHovered != null)
             {
-                currentHovered.OnHover();
+                currentHovered.OnHover(buildData);
                 Debug.Log($"[Builder] GENERAL HOVER: Now hovering over hex {currentHovered.coordinates} (Type: {currentHovered.hexType})");
             }
             

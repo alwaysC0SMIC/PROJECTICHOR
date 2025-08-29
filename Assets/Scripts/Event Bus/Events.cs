@@ -65,6 +65,7 @@ public struct UpdateGameStateEvent : IEvent
 
 public struct BuildingEvent : IEvent
 {
+    public SO_Defender defenderToBuild;
     public bool isBuilding;
 }
 

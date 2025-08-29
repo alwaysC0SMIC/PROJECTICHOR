@@ -5,6 +5,8 @@ using DG.Tweening;
 public class Tower : MonoBehaviour
 {
     //VARIABLES
+    [SerializeField] private SO_Defender defenderData;
+
     [SerializeField] public float maxhealth = 100.0f;
     [SerializeField] public float currentHealth = 100.0f;
     [SerializeField] public RadialHealth radialHealth; 
@@ -15,6 +17,8 @@ public class Tower : MonoBehaviour
     [SerializeField] private GameObject attackEffectPrefab;
     [SerializeField] Transform attackPoint;
     [SerializeField] private float rotationSpeed = 2.0f; // Speed of rotation in seconds
+
+    [SerializeField] private GameObject uiPrefab;
 
     private float nextAttackTime = 0f;
     private Sequence rotationSequence;
@@ -30,10 +34,41 @@ public class Tower : MonoBehaviour
     // Reference to owning HexTile
     private HexTile hexTile;
 
+    [SerializeField] private List<GameObject> towerModels;
+
     // Call this to set the owning tile after instantiation
     public void SetOwningTile(HexTile tile)
     {
         hexTile = tile;
+    }
+
+    public void Initialize(SO_Defender defender)
+    {
+        defenderData = defender;
+
+        //DISABLE ALL MODELS
+        foreach (GameObject model in towerModels)
+        {
+            model.SetActive(false);
+        }
+
+        //ENABLE CORRECT MODEL BASED ON DEFENDER NAME
+        if (defenderData.defenderName == "Lantern Keeper")
+        {
+            towerModels[0].SetActive(true);
+        }
+
+        // if (defenderData != null)
+        // {
+        //     maxhealth = Mathf.Max(1, defenderData.cost * 10); // Example: health scales with cost
+        //     damage = defenderData.cost * 20; // Example: damage scales with cost
+        //     attackRange = defenderData.range;
+        //     attackRate = Mathf.Max(0.1f, 2.0f - (defenderData.attackSpeed / 10f)); // Faster attack speed reduces cooldown
+        // }
+        // else
+        // {
+        //     Debug.LogWarning("[Tower] Initialize called with null defenderData.");
+        // }
     }
 
     void Start()
@@ -46,6 +81,13 @@ public class Tower : MonoBehaviour
     {
         currentHealth = maxhealth;
         radialHealth.Initialize(maxhealth);
+
+        uiPrefab.SetActive(true);
+    }
+
+    void OnDisable()
+    {
+        uiPrefab.SetActive(false);
     }
 
     // Using overlap sphere for enemy detection instead of collider triggers for better performance control
