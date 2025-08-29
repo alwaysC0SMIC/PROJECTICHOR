@@ -313,6 +313,8 @@ MonoBehaviour:
   hoverHeight: 1
   transformSpringComponent: {fileID: 2096665528957394823}
   rotationForce: 2
+  cardImage: {fileID: 2669570259903425597}
+  uIEffect: {fileID: 6684919425869046315}
 --- !u!114 &2096665528957394823
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -4,6 +4,8 @@ using UnityEngine;
 public class SO_Defender : ScriptableObject
 {
     [Header("Card Info")]
+    [ColorUsage(true, true)]
+    public Color hdrColorForCard;
     [SerializeField] public string defenderName;
     [SerializeField] public string defenderDescription;
     [SerializeField] public Sprite defenderArt;

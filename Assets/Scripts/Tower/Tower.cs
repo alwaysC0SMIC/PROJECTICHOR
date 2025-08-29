@@ -52,10 +52,27 @@ public class Tower : MonoBehaviour
             model.SetActive(false);
         }
 
-        //ENABLE CORRECT MODEL BASED ON DEFENDER NAME
-        if (defenderData.defenderName == "Lantern Keeper")
-        {
-            towerModels[0].SetActive(true);
+
+        switch (defenderData.defenderName)
+        { 
+            case "Lantern Keeper":
+                towerModels[0].SetActive(true);
+                break;
+            case "Eye Tower":
+                towerModels[1].SetActive(true);
+                break;
+            // case "Arrow Tower":
+            //     towerModels[2].SetActive(true);
+            //     break;
+            // case "Cannon Tower":
+            //     towerModels[3].SetActive(true);
+            //     break;
+            // case "Mage Tower":
+            //     towerModels[4].SetActive(true);
+            //     break;
+            default:
+                Debug.LogWarning($"[Tower] No model found for defender name: {defenderData.defenderName}");
+                break;
         }
 
         // if (defenderData != null)

@@ -1,5 +1,6 @@
 using System;
 using AllIn1SpringsToolkit;
+using Coffee.UIEffects;
 using DG.Tweening;
 using Flexalon;
 using Nova;
@@ -24,7 +25,8 @@ public class FlexCardUI : MonoBehaviour
     [SerializeField] private TransformSpringComponent transformSpringComponent;
     [SerializeField] private float rotationForce = 5F;
 
-
+    [SerializeField] private Image cardImage;
+    [SerializeField] private UIEffect uIEffect;
     //UI
     // [SerializeField] private TMP_Text cardNameText;
     // //[SerializeField] private TMP_Text cardDescriptionText;
@@ -70,12 +72,13 @@ public class FlexCardUI : MonoBehaviour
         //     });
         // }
     }
-    
+
 
     public void InitializeCard(SO_Defender defender)
     {
         defenderData = defender;
-
+        cardImage.sprite = defenderData.defenderArt;
+        uIEffect.color = defenderData.hdrColorForCard;
         // cardNameText.text = defenderData.defenderName;
         // //cardDescriptionText.text = defenderData.defenderDescription;
         // cardCostText.text = "Cost: " + defenderData.cost.ToString();

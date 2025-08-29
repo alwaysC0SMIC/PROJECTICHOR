@@ -122,7 +122,7 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
         {
             GameObject card = Instantiate(cardPrefab, transform);
             
-            card.GetComponent<FlexCardUI>().InitializeCard(defendersInHand[0]);
+            card.GetComponent<FlexCardUI>().InitializeCard(defendersInHand[i]);
             
             // Assign unique color and name
             //Color cardColor = cardColors[i % cardColors.Length];
