@@ -28,7 +28,7 @@ public class Tower : MonoBehaviour
     [SerializeField] Transform lanternKeeperAttackPoint;
     [SerializeField] Transform eyeTowerAttackPoint;
 
-    [SerializeField] private float rotationSpeed = 2.0f; // Speed of rotation in seconds
+    private float rotationSpeed = 5.0f; // Speed of rotation in seconds
 
     [SerializeField] private GameObject uiPrefab;
 
@@ -47,6 +47,8 @@ public class Tower : MonoBehaviour
     private HexTile hexTile;
 
     [SerializeField] private List<GameObject> towerModels;
+
+    private bool isInitialized = false;
 
     // Call this to set the owning tile after instantiation
     public void SetOwningTile(HexTile tile)
@@ -68,7 +70,7 @@ public class Tower : MonoBehaviour
 
 
         switch (defenderData.defenderName)
-        { 
+        {
             case "Lantern Keeper":
                 towerModels[0].SetActive(true);
                 currentAttackEffect = lanternKeeperAttackEffectPrefab;
@@ -110,6 +112,8 @@ public class Tower : MonoBehaviour
         {
             Debug.LogWarning("[Tower] Initialize called with null defenderData.");
         }
+
+        isInitialized = true;
     }
 
     void Start()
@@ -129,6 +133,7 @@ public class Tower : MonoBehaviour
     void OnDisable()
     {
         uiPrefab.SetActive(false);
+        isInitialized = false;
     }
 
     // Using overlap sphere for enemy detection instead of collider triggers for better performance control
@@ -136,24 +141,31 @@ public class Tower : MonoBehaviour
     {
         // Skip everything if tower is dead
         //if (isDead) return;
-        
-        // Update enemies in range using overlap sphere
-        UpdateEnemiesInRange();
-        
-        // Find and prioritize targets from enemies in range
-        FindAndPrioritizeTarget();
-        
-        // Continuously rotate towards current target
-        if (currentTarget != null && !isRotating)
+
+        if (isInitialized)
         {
-            FaceTarget(currentTarget);
-        }
-        
-        // Attack if ready
-        if (Time.time >= nextAttackTime && currentTarget != null)
-        {
-            Attack(currentTarget);
-            nextAttackTime = Time.time + attackRate;
+
+            // Update enemies in range using overlap sphere
+            UpdateEnemiesInRange();
+
+            // Find and prioritize targets from enemies in range
+            FindAndPrioritizeTarget();
+
+            // Continuously rotate towards current target
+            if (currentTarget != null && !isRotating)
+            {
+                FaceTarget(currentTarget);
+            }
+
+            // Attack if ready
+            if (Time.time >= nextAttackTime && currentTarget != null)
+            {
+                if (currentTarget != null)
+                {
+                    Attack(currentTarget);
+                }
+                nextAttackTime = Time.time + attackRate;
+            }
         }
     }
 
@@ -245,7 +257,7 @@ public class Tower : MonoBehaviour
         currentTarget = null;
         hexTile.OnTowerDestroyed();
         gameObject.SetActive(false);
-        
+        isInitialized = false;
     }
 
     private void Attack(Transform target)
@@ -327,7 +339,7 @@ public class Tower : MonoBehaviour
             Gizmos.DrawWireSphere(currentTarget.position, 0.5f);
         }
     }
-    
+
     void OnDestroy()
     {
         // Clean up DOTween sequence when tower is destroyed
@@ -335,5 +347,7 @@ public class Tower : MonoBehaviour
         {
             rotationSequence.Kill();
         }
+        
+        isInitialized = false;
     }
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 using Sirenix.OdinInspector;
 using AllIn1SpringsToolkit;
 using System.Collections.Generic;
+using System;
+using UnityEditor;
 
 /// <summary>
 /// Component attached to individual hex tile GameObjects to store their data and type.
@@ -15,22 +17,22 @@ public class HexTile : MonoBehaviour, IInteractable
     [LabelText("🗺️ Coordinates")]
     [ReadOnly, ShowInInspector]
     public HexCoordinates coordinates;
-    
+
     [TitleGroup("Hex Data")]
     [LabelText("🏷️ Hex Type")]
     [ReadOnly, ShowInInspector]
     public HexType hexType;
-    
+
     [TitleGroup("Hex Data")]
     [LabelText("🛤️ Lane ID")]
     [ReadOnly, ShowInInspector]
     public int laneId = -1;
-    
+
     [TitleGroup("Hex Data")]
     [LabelText("🔗 Is Junction Point")]
     [ReadOnly, ShowInInspector]
     public bool isJunctionPoint = false;
-    
+
     [TitleGroup("Visual")]
     [LabelText("🎨 Lane Color")]
     [ShowIf("@laneId >= 0")]
@@ -40,23 +42,23 @@ public class HexTile : MonoBehaviour, IInteractable
     [TitleGroup("Materials")]
     [LabelText("🏛️ Center Hub Material")]
     [SerializeField] private Material centerHubMaterial;
-    
+
     [TitleGroup("Materials")]
     [LabelText("🛤️ Pathway Material")]
     [SerializeField] private Material pathwayMaterial;
-    
+
     [TitleGroup("Materials")]
     [LabelText("🛡️ Defender Spot Material")]
     [SerializeField] private Material defenderSpotMaterial;
-    
+
     [TitleGroup("Materials")]
     [LabelText("🚀 Edge Spawn Material")]
     [SerializeField] private Material edgeSpawnMaterial;
-    
+
     [TitleGroup("Materials")]
     [LabelText("🌿 Environment Material")]
     [SerializeField] private Material environmentMaterial;
-    
+
     [TitleGroup("Materials")]
     [LabelText("🎨 Use Lane Color Override")]
     [Tooltip("When enabled, pathway materials will be tinted with the lane color")]
@@ -104,6 +106,9 @@ public class HexTile : MonoBehaviour, IInteractable
 
     // [SerializeField] GameObject hexagonUI;
     [SerializeField] Tower towerScript;
+
+    [SerializeField] GameObject environmentModels;
+
     //[SerializeField] GameObject environmentObject;
     //[SerializeField] GameObject exteriorDecorativeObject;
 
@@ -125,7 +130,7 @@ public class HexTile : MonoBehaviour, IInteractable
         towerScript.SetOwningTile(this);
         towerScript.gameObject.SetActive(false);
 
-        
+
         //towerScript.gameObject.SetActive(false);
     }
 
@@ -222,11 +227,13 @@ public class HexTile : MonoBehaviour, IInteractable
 
         ApplyMaterialForType();
 
+        RandomizeRotationY();
+
         // Spawn light if this is an edge spawn tile
         if (hexType == HexType.EdgeSpawn)
         {
             SpawnEdgeSpawnLight();
-            
+
             // Activate decorative object for edge spawn tiles
             if (isExteriorEnvironment)
             {
@@ -244,14 +251,14 @@ public class HexTile : MonoBehaviour, IInteractable
         //     hexagonUI.SetActive(false);
         // }
 
-        if(hexType == HexType.Environment)
+        if (hexType != HexType.DefenderSpot)
         {
             // Initialize environment object if this is an environment tile
             // if (environmentObject != null)
             // {
             //     environmentObject.SetActive(true);
             // }
-            
+
             // Activate exterior decorative objects for exterior environment tiles
             if (isExteriorEnvironment)
             {
@@ -271,11 +278,34 @@ public class HexTile : MonoBehaviour, IInteractable
         //     // Hide environment object for non-environment tiles
         //     environmentObject.SetActive(false);
         // }
-        
+
         // Update original position after all positioning is done (important for terrain height)
+
         UpdateOriginalPosition();
+        
+        if (hexType != HexType.DefenderSpot)
+        { 
+            // Get the current static flags
+                StaticEditorFlags currentFlags = GameObjectUtility.GetStaticEditorFlags(gameObject);
+                // Add the desired static flag (e.g., BatchingStatic)
+                currentFlags |= StaticEditorFlags.BatchingStatic;
+                // Set the updated static flags
+                GameObjectUtility.SetStaticEditorFlags(gameObject, currentFlags);
+        }
     }
-    
+
+    private void RandomizeRotationY()
+    {
+        // Choose a random multiple of 30 between 0 and 11 (0°–330°)
+        int step = UnityEngine.Random.Range(0, 6);
+        float angle = step * 60f;
+
+        // Apply rotation around Y axis
+        transform.rotation = Quaternion.Euler(0f, angle, 0f);
+
+        Debug.Log($"[HexTile] {gameObject.name} rotated to {angle}° on Y axis");
+    }
+
     /// <summary>
     /// Updates the stored original position - useful when terrain height changes the initial position
     /// </summary>
@@ -288,7 +318,7 @@ public class HexTile : MonoBehaviour, IInteractable
     private void SetTileBuild()
     {
         if (hexType == HexType.DefenderSpot)
-        { 
+        {
             // Convert layer name to layer index
             int buildableLayerIndex = LayerMask.NameToLayer(buildableLayerName);
             if (buildableLayerIndex != -1)
@@ -331,10 +361,10 @@ public class HexTile : MonoBehaviour, IInteractable
         {
             Debug.LogWarning($"[HexTile] No material assigned for hex type {hexType} on {gameObject.name}");
         }
-        
+
         SetTileBuild();
     }
-    
+
     private Material GetMaterialForType(HexType type)
     {
         return type switch
@@ -352,7 +382,7 @@ public class HexTile : MonoBehaviour, IInteractable
     {
         // Store old type to check for changes
         HexType oldType = hexType;
-        
+
         hexType = newType;
         laneId = newLaneId;
         isJunctionPoint = newJunction;
@@ -372,7 +402,7 @@ public class HexTile : MonoBehaviour, IInteractable
         {
             gameObject.name += "_Junction";
         }
-        
+
         // Update layer and material
         SetTileBuild();
         ApplyMaterialForType();
@@ -407,17 +437,19 @@ public class HexTile : MonoBehaviour, IInteractable
             // }
         }
     }
-    
+
     public void SetTileType(HexType newType)
     {
         UpdateType(newType);
+
+        
     }
 
     public HexType GetTileType()
     {
         return hexType;
     }
-    
+
     private string GetHexTypePrefix(HexType type)
     {
         switch (type)
@@ -430,7 +462,7 @@ public class HexTile : MonoBehaviour, IInteractable
             default: return "Unknown";
         }
     }
-    
+
     public Vector3 GetWorldPosition()
     {
         return transform.position;
@@ -468,10 +500,10 @@ public class HexTile : MonoBehaviour, IInteractable
 
         // Instantiate the light prefab
         spawnedLight = Instantiate(edgeSpawnLightPrefab, lightPosition, Quaternion.identity);
-        
+
         // Parent it to this tile
         spawnedLight.transform.SetParent(transform);
-        
+
         // Give it a descriptive name
         spawnedLight.name = $"EdgeSpawnLight_{coordinates.q}_{coordinates.r}";
 
@@ -503,26 +535,18 @@ public class HexTile : MonoBehaviour, IInteractable
     /// </summary>
     public void ActivateExteriorDecorativeObject()
     {
-        // if (exteriorDecorativeObject != null)
-        // {
-        //     exteriorDecorativeObject.SetActive(true);
-        //     Debug.Log($"[HexTile] Activated exterior decorative object for {gameObject.name}");
-        // }
-        // else
-        // {
-        //     Debug.LogWarning($"[HexTile] No exterior decorative object assigned for {gameObject.name}");
-        // }
+        environmentModels.SetActive(true);
     }
 
     public void SetBuildModeState(bool buildModeActive)
     {
         isBuildModeActive = buildModeActive;
-        
+
         // If build mode is disabled, hide preview immediately
         if (!isBuildModeActive)
         {
             foreach (var preview in previewPrefabs)
-            preview.SetActive(false);
+                preview.SetActive(false);
         }
     }
 
@@ -530,7 +554,7 @@ public class HexTile : MonoBehaviour, IInteractable
     {
         return isBuildModeActive && hexType == HexType.DefenderSpot && !isOccupied;
     }
-    
+
 #if UNITY_EDITOR
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🔍 Show Debug Info")]
@@ -549,7 +573,7 @@ public class HexTile : MonoBehaviour, IInteractable
                   $"Can Build: {CanBuild()}\n" +
                   $"Should Show Preview: {ShouldShowPreview()}");
     }
-    
+
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🎨 Apply Type Material")]
     [GUIColor(0.8f, 1f, 0.5f)]
@@ -558,7 +582,7 @@ public class HexTile : MonoBehaviour, IInteractable
         ApplyMaterialForType();
         Debug.Log($"[HexTile] Applied material for type {hexType} to {gameObject.name}");
     }
-    
+
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🌈 Apply Lane Color Tint")]
     [GUIColor(1f, 0.8f, 0.5f)]
@@ -587,7 +611,7 @@ public class HexTile : MonoBehaviour, IInteractable
             Debug.LogWarning($"[HexTile] No renderer or material found on {gameObject.name}");
         }
     }
-    
+
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "🔄 Test Hover Effect")]
     [GUIColor(0.5f, 1f, 0.8f)]
@@ -596,7 +620,7 @@ public class HexTile : MonoBehaviour, IInteractable
     {
         StartCoroutine(TestHoverCoroutine());
     }
-    
+
     [TitleGroup("Debug")]
     [Button(ButtonSizes.Medium, Name = "💡 Toggle Edge Spawn Light")]
     [GUIColor(1f, 1f, 0.2f)]
@@ -653,7 +677,7 @@ public class HexTile : MonoBehaviour, IInteractable
         //     Debug.LogWarning($"[HexTile] No exterior decorative object assigned");
         // }
     }
-    
+
     private System.Collections.IEnumerator TestHoverCoroutine()
     {
         Debug.Log($"[HexTile] Testing hover effect on {gameObject.name}");
@@ -665,7 +689,7 @@ public class HexTile : MonoBehaviour, IInteractable
 #endif
 
     #region IInteractable Implementation
-    
+
     public void OnHover(SO_Defender defenderData)
     {
         // Apply hover animation to tiles that should show hover effects (excludes pathway and edge spawn)
@@ -758,7 +782,7 @@ public class HexTile : MonoBehaviour, IInteractable
             Debug.Log($"[HexTile] Clicked on defender spot - could place building here!");
         }
         else
-        { 
+        {
             Debug.Log($"[HexTile] Invalid Build - Type: {hexType}, Occupied: {isOccupied}");
         }
     }

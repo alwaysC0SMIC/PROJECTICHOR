@@ -17,9 +17,7 @@ MonoBehaviour:
   defenderDescription: 
   defenderArt: {fileID: 21300000, guid: 4daf00d20870d244d95885de4376346d, type: 3}
   cost: 100
-  previewDefenderPrefab: {fileID: 0}
-  defenderPrefab: {fileID: 0}
   defenderHealth: 100
-  defenderDamage: 15
-  range: 5
+  defenderDamage: 10
+  range: 2.5
   attackSpeed: 0.2
