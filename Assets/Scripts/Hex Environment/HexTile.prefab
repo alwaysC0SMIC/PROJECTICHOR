@@ -2045,6 +2045,37 @@ Transform:
   - {fileID: 1200590572457322755}
   m_Father: {fileID: 5658469263088491286}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3904537172896503397
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1260525777738146188}
+  m_Layer: 0
+  m_Name: EyeTower_AttackPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1260525777738146188
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3904537172896503397}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.496, z: 0.646}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4951742892923569712}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4043139760049739477
 GameObject:
   m_ObjectHideFlags: 0
@@ -2439,7 +2470,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6205398788549195230}
   m_Layer: 0
-  m_Name: AttackPoint
+  m_Name: LanternKeeper_AttackPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2454,7 +2485,7 @@ Transform:
   m_GameObject: {fileID: 4638226883158423324}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1}
+  m_LocalPosition: {x: 0, y: 0.08, z: 0.73}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4842,6 +4873,7 @@ Transform:
   - {fileID: 7046766678176153473}
   - {fileID: 1025505615202604027}
   - {fileID: 6205398788549195230}
+  - {fileID: 1260525777738146188}
   m_Father: {fileID: 6150563557752437179}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &4624112462492005669
@@ -4916,8 +4948,10 @@ MonoBehaviour:
   damage: 50
   attackRange: 2.6
   attackRate: 1
-  attackEffectPrefab: {fileID: 5403709900032079272, guid: 0d876df26ec88724996a98461e137490, type: 3}
-  attackPoint: {fileID: 6205398788549195230}
+  lanternKeeperAttackEffectPrefab: {fileID: 5403709900032079272, guid: 5f3ae5d100ee3f64b904f6b01c5eac5b, type: 3}
+  eyeTownEffectPrefab: {fileID: 5403709900032079272, guid: 9afe79888bef4c848a4e246c002c0b5a, type: 3}
+  lanternKeeperAttackPoint: {fileID: 6205398788549195230}
+  eyeTowerAttackPoint: {fileID: 1260525777738146188}
   rotationSpeed: 2
   uiPrefab: {fileID: 307001832283883708}
   enemyLayerMask:

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 public class Enemy : MonoBehaviour
 {
@@ -65,6 +66,7 @@ public class Enemy : MonoBehaviour
 
     public void TriggerDeath()
     {
+        EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = true, ichorAmount = 10});
         gameObject.SetActive(false);
     }
 

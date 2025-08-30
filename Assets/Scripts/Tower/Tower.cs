@@ -12,10 +12,22 @@ public class Tower : MonoBehaviour
     [SerializeField] public RadialHealth radialHealth; 
 
     [SerializeField] private float damage = 100.0f;
+
     [SerializeField] private float attackRange = 5.0f;
     [SerializeField] private float attackRate = 1.0f;
-    [SerializeField] private GameObject attackEffectPrefab;
-    [SerializeField] Transform attackPoint;
+
+    //ATTACK PREFABS
+    [SerializeField] private GameObject lanternKeeperAttackEffectPrefab;
+    [SerializeField] private GameObject eyeTownEffectPrefab;
+    
+    private GameObject currentAttackEffect;
+    private Transform currentAttackPoint;
+
+
+
+    [SerializeField] Transform lanternKeeperAttackPoint;
+    [SerializeField] Transform eyeTowerAttackPoint;
+
     [SerializeField] private float rotationSpeed = 2.0f; // Speed of rotation in seconds
 
     [SerializeField] private GameObject uiPrefab;
@@ -46,6 +58,8 @@ public class Tower : MonoBehaviour
     {
         defenderData = defender;
 
+
+
         //DISABLE ALL MODELS
         foreach (GameObject model in towerModels)
         {
@@ -57,10 +71,15 @@ public class Tower : MonoBehaviour
         { 
             case "Lantern Keeper":
                 towerModels[0].SetActive(true);
+                currentAttackEffect = lanternKeeperAttackEffectPrefab;
+                currentAttackPoint = lanternKeeperAttackPoint; // Assuming lantern keeper uses the same attack point
                 break;
             case "Eye Tower":
                 towerModels[1].SetActive(true);
+                currentAttackEffect = eyeTownEffectPrefab;
+                currentAttackPoint = eyeTowerAttackPoint; // Assuming eye tower uses the same attack point
                 break;
+
             // case "Arrow Tower":
             //     towerModels[2].SetActive(true);
             //     break;
@@ -70,22 +89,27 @@ public class Tower : MonoBehaviour
             // case "Mage Tower":
             //     towerModels[4].SetActive(true);
             //     break;
+
             default:
                 Debug.LogWarning($"[Tower] No model found for defender name: {defenderData.defenderName}");
                 break;
         }
 
-        // if (defenderData != null)
-        // {
-        //     maxhealth = Mathf.Max(1, defenderData.cost * 10); // Example: health scales with cost
-        //     damage = defenderData.cost * 20; // Example: damage scales with cost
-        //     attackRange = defenderData.range;
-        //     attackRate = Mathf.Max(0.1f, 2.0f - (defenderData.attackSpeed / 10f)); // Faster attack speed reduces cooldown
-        // }
-        // else
-        // {
-        //     Debug.LogWarning("[Tower] Initialize called with null defenderData.");
-        // }
+        if (defenderData != null)
+        {
+            //maxhealth = defenderData; // Example: health scales with cost
+            damage = defenderData.defenderDamage; // Example: damage scales with cost
+
+            attackRange = defenderData.range;
+            attackRate = defenderData.attackSpeed; // Faster attack speed reduces cooldown
+
+            maxhealth = defenderData.defenderHealth;
+            currentHealth = maxhealth;
+        }
+        else
+        {
+            Debug.LogWarning("[Tower] Initialize called with null defenderData.");
+        }
     }
 
     void Start()
@@ -226,7 +250,7 @@ public class Tower : MonoBehaviour
 
     private void Attack(Transform target)
     {
-        if (attackEffectPrefab != null)
+        if (eyeTownEffectPrefab != null)
         {
             // Make tower face the target
             FaceTarget(target);
@@ -234,12 +258,10 @@ public class Tower : MonoBehaviour
             //Debug.Log($"[Tower] Attacking target {target.name} at position {target.position}");
             //Debug.Log($"[Tower] Spawning projectile at {attackPoint.position} with rotation {attackPoint.rotation}");
             
-            GameObject projectileObj = Instantiate(attackEffectPrefab, attackPoint.position, attackPoint.rotation);
+            GameObject projectileObj = Instantiate(currentAttackEffect, currentAttackPoint.position, currentAttackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();
             attack?.SetTarget(target, damage);
             projectileObj.transform.localScale = Vector3.one; // Ensure projectile is visible    
-
-            
 
         }
         else

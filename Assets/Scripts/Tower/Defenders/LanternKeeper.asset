@@ -19,5 +19,7 @@ MonoBehaviour:
   cost: 100
   previewDefenderPrefab: {fileID: 0}
   defenderPrefab: {fileID: 0}
-  range: 0
-  attackSpeed: 0
+  defenderHealth: 100
+  defenderDamage: 15
+  range: 5
+  attackSpeed: 0.2
