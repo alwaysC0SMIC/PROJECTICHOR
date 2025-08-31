@@ -282,15 +282,10 @@ public class HexTile : MonoBehaviour, IInteractable
         // Update original position after all positioning is done (important for terrain height)
 
         UpdateOriginalPosition();
-        
+
         if (hexType != HexType.DefenderSpot)
-        { 
-            // Get the current static flags
-                StaticEditorFlags currentFlags = GameObjectUtility.GetStaticEditorFlags(gameObject);
-                // Add the desired static flag (e.g., BatchingStatic)
-                currentFlags |= StaticEditorFlags.BatchingStatic;
-                // Set the updated static flags
-                GameObjectUtility.SetStaticEditorFlags(gameObject, currentFlags);
+        {  
+            gameObject.isStatic = true;
         }
     }
 

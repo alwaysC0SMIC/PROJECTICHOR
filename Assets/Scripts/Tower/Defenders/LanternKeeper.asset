@@ -19,5 +19,5 @@ MonoBehaviour:
   cost: 100
   defenderHealth: 100
   defenderDamage: 10
-  range: 2.5
+  range: 3
   attackSpeed: 0.2
