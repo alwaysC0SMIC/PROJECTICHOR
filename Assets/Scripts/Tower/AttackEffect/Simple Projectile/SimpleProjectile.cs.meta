@@ -5,7 +5,7 @@ MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - target: {instanceID: 0}
-  - projectilePrefab: {fileID: 5403709900032079272, guid: 0d876df26ec88724996a98461e137490, type: 3}
+  - explosionFX: {fileID: 4689461263837755954, guid: a148d09bbe04fb0479178ef6d840f7c8, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

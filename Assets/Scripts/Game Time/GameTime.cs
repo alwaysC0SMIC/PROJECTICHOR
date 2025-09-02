@@ -204,7 +204,9 @@ public class GameTime : MonoBehaviour
         if (Instance != null)
         {
             Instance.isPaused = true;
-            
+
+            TransitionTimeScale(0F, 0.2F);
+
             if (Instance.showDebugInfo)
             {
                 Debug.Log("[GameTime] Game time paused");
@@ -221,6 +223,8 @@ public class GameTime : MonoBehaviour
         {
             Instance.isPaused = false;
             
+            TransitionTimeScale(1F, 0.2F);
+
             if (Instance.showDebugInfo)
             {
                 Debug.Log("[GameTime] Game time resumed");

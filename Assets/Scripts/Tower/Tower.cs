@@ -9,7 +9,7 @@ public class Tower : MonoBehaviour
 
     [SerializeField] public float maxhealth = 100.0f;
     [SerializeField] public float currentHealth = 100.0f;
-    [SerializeField] public RadialHealth radialHealth; 
+    [SerializeField] public RadialHealth radialHealth;
 
     [SerializeField] private float damage = 100.0f;
 
@@ -19,7 +19,7 @@ public class Tower : MonoBehaviour
     //ATTACK PREFABS
     [SerializeField] private GameObject lanternKeeperAttackEffectPrefab;
     [SerializeField] private GameObject eyeTownEffectPrefab;
-    
+
     private GameObject currentAttackEffect;
     private Transform currentAttackPoint;
 
@@ -157,15 +157,13 @@ public class Tower : MonoBehaviour
                 FaceTarget(currentTarget);
             }
 
-            // Attack if ready
-            if (Time.time >= nextAttackTime && currentTarget != null)
+            // ATTACK 
+            if (GameTime.TotalTime >= nextAttackTime && currentTarget != null)
             {
-                if (currentTarget != null)
-                {
-                    Attack(currentTarget);
-                }
-                nextAttackTime = Time.time + attackRate;
+                Attack(currentTarget);
+                nextAttackTime = GameTime.TotalTime + attackRate;
             }
+
         }
     }
 
@@ -173,10 +171,10 @@ public class Tower : MonoBehaviour
     {
         // Clear the current list
         enemiesInRange.Clear();
-        
+
         // Use overlap sphere to detect enemies
         Collider[] colliders = Physics.OverlapSphere(transform.position, attackRange, enemyLayerMask);
-        
+
         // Add valid enemy transforms to the list
         foreach (Collider col in colliders)
         {
@@ -186,15 +184,15 @@ public class Tower : MonoBehaviour
             }
         }
     }
-    
+
     private void FindAndPrioritizeTarget()
     {
         // Clean up null references (destroyed enemies)
         enemiesInRange.RemoveAll(enemy => enemy == null);
-        
+
         Transform bestTarget = null;
         float furthestProgress = -1f;
-        
+
         foreach (Transform enemy in enemiesInRange)
         {
             if (enemy != null)
@@ -204,7 +202,7 @@ public class Tower : MonoBehaviour
                 if (followWP != null)
                 {
                     float progress = followWP.GetPathProgress(); // Get progress along path
-                    
+
                     // Prioritize enemy furthest along the path
                     if (progress > furthestProgress)
                     {
@@ -222,15 +220,15 @@ public class Tower : MonoBehaviour
                 }
             }
         }
-        
+
         currentTarget = bestTarget;
     }
-    
+
     // Method to take damage
     public void TakeDamage(float damageAmount)
     {
         //if (isDead) return;
-        
+
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(0, currentHealth);
 
@@ -266,10 +264,10 @@ public class Tower : MonoBehaviour
         {
             // Make tower face the target
             FaceTarget(target);
-            
+
             //Debug.Log($"[Tower] Attacking target {target.name} at position {target.position}");
             //Debug.Log($"[Tower] Spawning projectile at {attackPoint.position} with rotation {attackPoint.rotation}");
-            
+
             GameObject projectileObj = Instantiate(currentAttackEffect, currentAttackPoint.position, currentAttackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();
             attack?.SetTarget(target, damage);
@@ -281,27 +279,27 @@ public class Tower : MonoBehaviour
             Debug.LogError("[Tower] attackEffectPrefab is null!");
         }
     }
-    
+
     private void FaceTarget(Transform target)
     {
-        
+
         // Calculate direction to target (only Y axis rotation)
         Vector3 direction = (target.position - transform.position);
         direction.y = 0; // Keep tower upright, only rotate on Y axis
         direction = direction.normalized;
-        
+
         // Create rotation looking towards target
         if (direction != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(direction);
-            
+
             // Calculate the Y rotation angle
             float targetYRotation = lookRotation.eulerAngles.y;
             float currentYRotation = transform.eulerAngles.y;
-            
+
             // Check if rotation is needed (avoid unnecessary rotations)
             float angleDifference = Mathf.DeltaAngle(currentYRotation, targetYRotation);
-            
+
             if (Mathf.Abs(angleDifference) > 1f) // Only rotate if difference is significant
             {
                 // Kill any existing rotation sequence
@@ -309,14 +307,15 @@ public class Tower : MonoBehaviour
                 {
                     rotationSequence.Kill();
                 }
-                
+
                 isRotating = true;
-                
+
                 // Smooth rotation using DOTween
                 rotationSequence = DOTween.Sequence()
                     .Append(transform.DORotate(new Vector3(0, targetYRotation, 0), rotationSpeed))
                     .SetEase(Ease.OutQuad)
-                    .OnComplete(() => {
+                    .OnComplete(() =>
+                    {
                         isRotating = false;
                     });
             }
@@ -328,13 +327,13 @@ public class Tower : MonoBehaviour
         // Draw attack range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
-        
+
         // Draw line to current target
         if (currentTarget != null)
         {
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, currentTarget.position);
-            
+
             // Draw a small sphere at the target position
             Gizmos.DrawWireSphere(currentTarget.position, 0.5f);
         }
@@ -347,7 +346,7 @@ public class Tower : MonoBehaviour
         {
             rotationSequence.Kill();
         }
-        
+
         isInitialized = false;
     }
 }

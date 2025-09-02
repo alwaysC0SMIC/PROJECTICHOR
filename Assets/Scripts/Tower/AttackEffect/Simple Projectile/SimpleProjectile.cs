@@ -1,120 +1,137 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class SimpleProjectile : MonoBehaviour, ITarget
 {
-    //VARIABLES
+    // VARIABLES
     public Transform target;
-    [SerializeField] private float damage = 100F;
-    [SerializeField] private float speed = 10.0F;
-    [SerializeField] private float collisionRadius = 0.5f;
+
+    [Header("FX")]
+    [SerializeField] private GameObject explosionFX;
+
+    [Header("Combat")]
+    [SerializeField] private float damage = 100f;
+
+    [Header("Motion")]
+    [SerializeField] private float speed = 10.0f;
     [SerializeField] private float yOffset = 0.3f; // Height offset for targeting
+    [SerializeField] private float arrivalThreshold = 0.05f; // How close is "arrived"
+
+    [Header("Collision")]
+    [SerializeField] private float collisionRadius = 0.5f;
     [SerializeField] private LayerMask enemyLayerMask = -1; // All layers by default
-    private bool attackTravel = false;
+
+    [Header("Flags")]
+    public bool attackTravel = false;
+
+    // Internals
     private Vector3 targetPosition;
     private Vector3 moveDirection;
 
-    void Start()
-    {
-        //transform.localScale = Vector3.zero;
-    }
-
+    // Track enemies we've already damaged so we don't double-hit
+    private readonly HashSet<EnemyHealth> _alreadyDamaged = new HashSet<EnemyHealth>();
 
     void Update()
     {
-        // Move projectile towards target
-        if (attackTravel && target != null)
+        if (!attackTravel)
+            return;
+
+        // If destination (target) is destroyed or missing -> destroy projectile
+        if (target == null || !target.gameObject)
         {
-            MoveTowardsTarget();
+            DestroyProjectile();
+            return;
         }
-        
-        // Check for collisions with enemies while projectile is traveling
-        if (attackTravel)
-        {
-            CheckForEnemyCollisions();
-        }
+
+        // Continuously update target position (so we chase a moving target)
+        targetPosition = target.position + Vector3.up * yOffset;
+
+        // Move towards the current target position using your custom time
+        MoveTowardsTarget();
+
+        // While traveling, damage any enemies we overlap
+        CheckForEnemyCollisions();
     }
-    
+
     private void MoveTowardsTarget()
     {
         // Move towards target position
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, speed * GameTime.DeltaTime);
-        
-        // Check if we've reached the target
-        if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetPosition,
+            speed * GameTime.DeltaTime
+        );
+
+        // Face travel direction if desired (optional)
+        Vector3 toTarget = targetPosition - transform.position;
+        toTarget.y = 0f;
+        if (toTarget.sqrMagnitude > 0.0001f)
         {
-            // Reached target without hitting enemy
-            if (attackTravel)
-            {
-                Debug.Log("[SimpleProjectile] Reached target, destroying projectile");
-                DestroyProjectile();
-            }
+            transform.rotation = Quaternion.LookRotation(toTarget.normalized, Vector3.up);
+        }
+
+        // Check if we've reached (or very close to) the destination
+        if (Vector3.Distance(transform.position, targetPosition) <= arrivalThreshold)
+        {
+            DestroyProjectile();
         }
     }
-    
+
     private void CheckForEnemyCollisions()
     {
         // Use OverlapSphere to check for enemies within collision radius
         Collider[] enemiesInRange = Physics.OverlapSphere(transform.position, collisionRadius, enemyLayerMask);
-        
-        foreach (Collider enemyCollider in enemiesInRange)
+
+        for (int i = 0; i < enemiesInRange.Length; i++)
         {
-            if (enemyCollider.CompareTag("Enemy"))
+            Collider enemyCollider = enemiesInRange[i];
+
+            // You can keep the tag check if your project relies on it
+            if (!enemyCollider.CompareTag("Enemy"))
+                continue;
+
+            EnemyHealth enemyHealth = enemyCollider.GetComponent<EnemyHealth>();
+            if (enemyHealth != null && !_alreadyDamaged.Contains(enemyHealth))
             {
-                Enemy enemy = enemyCollider.GetComponent<Enemy>();
-                if (enemy != null)
-                {
-                    OnHitEnemy(enemy);
-                    return; // Exit after hitting first enemy
-                }
+                enemyHealth.TakeDamage(damage);
+                _alreadyDamaged.Add(enemyHealth);
+                // Note: DO NOT destroy or stop traveling — we keep going and can hit others too
             }
         }
     }
-    
-    private void OnHitEnemy(Enemy enemy)
-    {
-        attackTravel = false;
-        
-        EnemyHealth enemyHealth = enemy.GetComponent<EnemyHealth>();
-        if (enemyHealth != null)
-        {
-            enemyHealth.TakeDamage(damage);
-        }
-        
-        DestroyProjectile();
-    }
-    
+
     private void DestroyProjectile()
-    {     
-        Destroy(gameObject); 
+    {
+        if (explosionFX != null)
+        {
+            Instantiate(explosionFX, transform.position, transform.rotation);
+        }
+        Destroy(gameObject);
     }
-
-    // public void SetTarget(Transform intarget)
-    // {
-    //     target = intarget;
-    //     attackTravel = true;
-
-    //     if (target != null)
-    //     {
-    //         // Add Y offset to target position to aim slightly higher
-    //         targetPosition = target.position + Vector3.up * yOffset;
-    //         moveDirection = (targetPosition - transform.position).normalized;
-            
-    //     }
-    // }
 
     public void SetTarget(Transform intarget, float damageAmount = 100)
     {
-        //throw new System.NotImplementedException();
         damage = damageAmount;
         target = intarget;
         attackTravel = true;
 
         if (target != null)
         {
-            // Add Y offset to target position to aim slightly higher
+            // Initialize first target position & direction
             targetPosition = target.position + Vector3.up * yOffset;
             moveDirection = (targetPosition - transform.position).normalized;
-            
         }
+        else
+        {
+            // No valid target -> self-destruct immediately
+            DestroyProjectile();
+        }
+    }
+
+    // Debug gizmos for collision radius
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, collisionRadius);
     }
 }

@@ -177,10 +177,10 @@ public class EnemyAttack : MonoBehaviour
         }
 
         // Perform attack if ready
-        if (canAttack && Time.time >= lastAttackTime + attackRate)
+        if (canAttack && GameTime.TotalTime >= lastAttackTime + attackRate)
         {
             PerformAttack();
-            lastAttackTime = Time.time;
+            lastAttackTime = GameTime.TotalTime;
         }
     }
 
@@ -256,10 +256,10 @@ public class EnemyAttack : MonoBehaviour
     private void CentreHubAttackSequence()
     {
         // Perform attack if ready
-        if (canAttack && Time.time >= lastAttackTime + attackRate)
+        if (canAttack && GameTime.TotalTime >= lastAttackTime + attackRate)
         {
             PerformCentreHubAttack();
-            lastAttackTime = Time.time;
+            lastAttackTime = GameTime.TotalTime;
         }
     }
 

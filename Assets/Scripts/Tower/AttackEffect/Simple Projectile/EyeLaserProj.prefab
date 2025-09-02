@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 0}
+  explosionFX: {fileID: 4689461263837755954, guid: a148d09bbe04fb0479178ef6d840f7c8, type: 3}
   damage: 50
   speed: 20
   collisionRadius: 0.1
@@ -53,6 +54,7 @@ MonoBehaviour:
   enemyLayerMask:
     serializedVersion: 2
     m_Bits: 512
+  attackTravel: 0
 --- !u!1 &7499623761670977171
 GameObject:
   m_ObjectHideFlags: 0

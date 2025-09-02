@@ -27,10 +27,11 @@ public class FlexCardUI : MonoBehaviour
 
     [SerializeField] private Image cardImage;
     [SerializeField] private UIEffect uIEffect;
+
     //UI
-    // [SerializeField] private TMP_Text cardNameText;
-    // //[SerializeField] private TMP_Text cardDescriptionText;
-    // [SerializeField] private TMP_Text cardCostText;
+    [SerializeField] private TMP_Text cardNameText;
+    //[SerializeField] private TMP_Text cardDescriptionText;
+    [SerializeField] private TMP_Text cardCostText;
 
 
     void Start()
@@ -79,9 +80,9 @@ public class FlexCardUI : MonoBehaviour
         defenderData = defender;
         cardImage.sprite = defenderData.defenderArt;
         uIEffect.color = defenderData.hdrColorForCard;
-        // cardNameText.text = defenderData.defenderName;
+        cardNameText.text = defenderData.defenderName;
         // //cardDescriptionText.text = defenderData.defenderDescription;
-        // cardCostText.text = "Cost: " + defenderData.cost.ToString();
+        cardCostText.text = "Cost: " + defenderData.cost.ToString();
     }
 
     private void OnDragEnd(FlexalonInteractable arg0)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using DG.Tweening;
 
 public class Enemy : MonoBehaviour
 {
@@ -11,8 +12,16 @@ public class Enemy : MonoBehaviour
     [SerializeField] private FollowWP followWP;
     [SerializeField] private EnemyAttack attack;
 
+    [SerializeField] private GameObject deathEffect;
+
+    void Awake()
+    {
+        transform.localScale = Vector3.zero;
+    }
+
     public void Initialize(SO_Enemy enemydata, List<Transform> inWaypoints)
     {
+
         //DATA
         enemyData = enemydata;
 
@@ -25,6 +34,9 @@ public class Enemy : MonoBehaviour
         //MOVEMENT
         followWP.Initialize(this, inWaypoints);
         UpdateEnemyState(EnemyState.Moving);
+
+        transform.DOScale(Vector3.one, 1f)
+        .SetEase(Ease.OutCubic);
     }
 
     
@@ -67,7 +79,14 @@ public class Enemy : MonoBehaviour
     public void TriggerDeath()
     {
         EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = true, ichorAmount = 10});
-        gameObject.SetActive(false);
+
+        Instantiate(deathEffect, transform.position, transform.rotation);
+
+        transform.DOScale(Vector3.zero, 0.2f)
+    .SetEase(Ease.InBack) // optional, adds a nice shrinking effect
+    .OnComplete(() => Destroy(gameObject));
+
+        
     }
 
     public void UpdateEnemyState(EnemyState newState)

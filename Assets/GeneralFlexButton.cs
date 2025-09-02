@@ -1,10 +1,17 @@
 using System;
 using Flexalon;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class GeneralFlexButton : MonoBehaviour
 {
+    [Header("INTERACTABLE")]
     [SerializeField] private FlexalonInteractable interactable;
+
+    [Header("EVENTS")]
+    [SerializeField] private UnityEvent OnClickEvent;
+    [SerializeField] private UnityEvent OnHoverEvent;
+    [SerializeField] private UnityEvent OnUnHoverEvent;
     
     void Start()
     {
@@ -15,17 +22,17 @@ public class GeneralFlexButton : MonoBehaviour
 
     private void ClickFunction(FlexalonInteractable arg0)
     {
-       EventBus<UpdateGameStateEvent>.Raise(new UpdateGameStateEvent { gameState = GameState.Playing });
+        OnClickEvent?.Invoke();
     }
 
     private void UnHoverAnimation(FlexalonInteractable arg0)
     {
-        
+        OnUnHoverEvent?.Invoke();
     }
 
     private void HoverAnimation(FlexalonInteractable arg0)
     {
-        
+        OnHoverEvent?.Invoke();
     }
 
 }
