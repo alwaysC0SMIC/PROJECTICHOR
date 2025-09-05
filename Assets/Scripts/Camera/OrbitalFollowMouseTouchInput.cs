@@ -217,9 +217,9 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
             _mouseStartTime = Time.unscaledTime;
 
             _mouseRotateBlockedThisPress = false;
-            if (settings.blockRotationWhenPointerOverUI && EventSystem.current != null)
+            if (settings.blockRotationWhenPointerOverUI)
             {
-                if (EventSystem.current.IsPointerOverGameObject())
+                if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged)
                     _mouseRotateBlockedThisPress = true;
             }
         }
@@ -238,6 +238,14 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
                     elapsed >= settings.dragStartTimeBuffer &&
                     moved >= settings.dragStartPixelBuffer)
                 {
+                    // Double-check UI state right before starting camera drag
+                    if (settings.blockRotationWhenPointerOverUI && 
+                        (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged))
+                    {
+                        _mouseRotateBlockedThisPress = true;
+                        return;
+                    }
+                    
                     _mouseDraggingCamera = true;
                     _mouseLastPos = curPos; // start consuming deltas from here
                 }
@@ -245,6 +253,13 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
 
             if (_mouseDraggingCamera)
             {
+                // Continuously check if we should stop camera rotation due to Nova UI interaction
+                if (settings.blockRotationWhenPointerOverUI && (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged))
+                {
+                    _mouseDraggingCamera = false;
+                    return;
+                }
+
                 Vector2 delta = curPos - _mouseLastPos;
                 _mouseLastPos = curPos;
 
@@ -281,10 +296,10 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
                     _touchStartTime = Time.unscaledTime;
 
                     _touchRotateBlockedThisPress = false;
-                    if (settings.blockRotationWhenPointerOverUI && EventSystem.current != null)
+                    if (settings.blockRotationWhenPointerOverUI)
                     {
-                        // FOR TOUCH, PASS FINGER ID
-                        if (EventSystem.current.IsPointerOverGameObject(_activeFingerId))
+                        // FOR TOUCH, CHECK NOVA UI HOVER GUARD
+                        if (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged)
                             _touchRotateBlockedThisPress = true;
                     }
                     break;
@@ -324,6 +339,14 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
                     elapsed >= settings.dragStartTimeBuffer &&
                     moved >= settings.dragStartPixelBuffer)
                 {
+                    // Double-check UI state right before starting camera drag
+                    if (settings.blockRotationWhenPointerOverUI && 
+                        (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged))
+                    {
+                        _touchRotateBlockedThisPress = true;
+                        return;
+                    }
+                    
                     _touchDraggingCamera = true;
                     _touchLastPos = curPos;
                 }
@@ -331,6 +354,13 @@ public class OrbitalFollowMouseTouchInput : MonoBehaviour
 
             if (_touchDraggingCamera)
             {
+                // Continuously check if we should stop camera rotation due to Nova UI interaction
+                if (settings.blockRotationWhenPointerOverUI && (NovaHoverGuard.IsOverNovaUI || NovaHoverGuard.IsBeingInteractedWith || CardHandManager.IsAnyCardBeingDragged))
+                {
+                    _touchDraggingCamera = false;
+                    return;
+                }
+
                 Vector2 delta = curPos - _touchLastPos;
                 _touchLastPos = curPos;
 

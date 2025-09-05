@@ -55,8 +55,20 @@ public class UIPageManager : MonoBehaviour
 
     [TitleGroup("Page Animation Settings")]
     [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
+    [LabelText("Tween In Target (optional)")]
+    [Tooltip("Optional Nova UIBlock target for Tween In. If null, will use pageRoot.")]
+    [SerializeField] private UIBlock tweenInTarget;
+
+    [TitleGroup("Page Animation Settings")]
+    [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
     [LabelText("Tween Out")]
     [SerializeField] private TweenPreset tweenOut;
+
+    [TitleGroup("Page Animation Settings")]
+    [ShowIf("@useFullPageAnimation && (pageAnimationMode == PageAnimationMode.TweenAnimation || pageAnimationMode == PageAnimationMode.Both)")]
+    [LabelText("Tween Out Target (optional)")]
+    [Tooltip("Optional Nova UIBlock target for Tween Out. If null, will use pageRoot.")]
+    [SerializeField] private UIBlock tweenOutTarget;
 
     [TitleGroup("Page Animation Settings/Sequence Control")]
     [ShowIf(nameof(useFullPageAnimation))]
@@ -265,9 +277,27 @@ public class UIPageManager : MonoBehaviour
         if (pageRoot == null) yield break;
 
         var targetTween = enable ? tweenIn : tweenOut;
+        var targetUIBlock = enable ? tweenInTarget : tweenOutTarget;
+        
         if (targetTween != null)
         {
-            Tween tween = targetTween.ApplyTween(pageRoot.transform);
+            Tween tween = null;
+            
+            // Determine the target to use - custom target or fallback to pageRoot
+            UIBlock uiBlockTarget = targetUIBlock != null ? targetUIBlock : pageRoot;
+            
+            // Use Transform target for tween types (Move, Scale, Rotate, Fade)
+            Transform transformTarget = uiBlockTarget != null ? uiBlockTarget.transform : pageRoot.transform;
+
+            if (targetTween.tweenType == TweenPreset.TweenType.NovaScale || targetTween.tweenType == TweenPreset.TweenType.NovaPosition)
+            {
+                tween = targetTween.ApplyTween(uiBlockTarget);
+            }
+            else
+            { 
+                tween = targetTween.ApplyTween(transformTarget);
+            }
+
             if (tween != null)
                 yield return tween.WaitForCompletion();
         }
@@ -318,10 +348,32 @@ public class UIPageManager : MonoBehaviour
     #region HELPERS
 
     [Button("▶ Open Page")]
-    private void SimulateOpen() => EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = pageType });
+    private void SimulateOpen() 
+    {
+        //Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: {pageType}");
+        EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = pageType });
+    }
 
     [Button("⏹ Close Page")]
-    private void SimulateClose() => EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.None });
+    private void SimulateClose() 
+    {
+        //Debug.Log($"[UIPageManager] Raising UpdateUIPageEvent for: None");
+        EventBus<UpdateUIPageEvent>.Raise(new UpdateUIPageEvent { uiPage = Enum_UIMenuPage.None });
+    }
+
+#if UNITY_EDITOR
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📄 Page Type")]
+    private Enum_UIMenuPage Debug_PageType => pageType;
+
+    [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
+    [LabelText("📊 Event Bus Status")]
+    [DisplayAsString]
+    private string Debug_EventBusStatus => 
+        $"Registered: {(updateUIPage != null ? "Yes" : "No")} | " +
+        $"Page: {pageType} | " +
+        $"Time: {System.DateTime.Now:HH:mm:ss}";
+#endif
 
     private void SetupPage()
     {

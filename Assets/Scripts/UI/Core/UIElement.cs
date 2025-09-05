@@ -31,6 +31,14 @@ public class UIElement : MonoBehaviour
     [TitleGroup("State"), ReadOnly, LabelText("✅ Enabled?")]
     public bool isEnabled = true;
 
+    [TitleGroup("State"), LabelText("🎭 Play Animations")]
+    [Tooltip("When enabled, show/hide will play animations. When disabled, show/hide will be instant.")]
+    public bool playAnimations = true;
+
+    [TitleGroup("State"), LabelText("👁 Hide When Disabled")]
+    [Tooltip("When enabled, disabling the element will make it invisible. When disabled, the element stays visible but becomes non-interactive.")]
+    public bool hideWhenDisabled = true;
+
     [TitleGroup("State"), ShowInInspector, ReadOnly, LabelText("📦 Root")]
     public UIBlock Root { get; private set; }
 
@@ -74,8 +82,14 @@ public class UIElement : MonoBehaviour
     [TitleGroup("Events"), SerializeField, LabelText("📣 On Enable")]
     public UnityEvent OnEnable;
 
+    [TitleGroup("Events"), SerializeField, LabelText("📣 On Enable Completion")]
+    public UnityEvent OnEnableFinish;
+
     [TitleGroup("Events"), SerializeField, LabelText("📣 On Disable")]
     public UnityEvent OnDisable;
+
+    [TitleGroup("Events"), SerializeField, LabelText("📣 On Disable Completion")]
+    public UnityEvent OnDisableFinish;
 
     [TitleGroup("Audio"), SerializeField, LabelText("🔊 Show SFX")]
     public AudioTrigger showSound = AudioTrigger.UI_Show;
@@ -121,6 +135,34 @@ public class UIElement : MonoBehaviour
     [Button("▶ Enable", ButtonSizes.Large), GUIColor(0.55f, 0.9f, 0.55f)]
     public virtual void EnableElement()
     {
+        if (!playAnimations)
+        {
+            EnableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+            return;
+        }
+
+        // Animated version
+        EnableElementAnimated();
+    }
+
+    [Button("⏹ Disable", ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
+    public virtual void DisableElement()
+    {
+        if (!playAnimations)
+        {
+            DisableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+            return;
+        }
+
+        // Animated version
+        DisableElementAnimated();
+    }
+
+    /// <summary>
+    /// Enables the element with animations.
+    /// </summary>
+    private void EnableElementAnimated()
+    {
         // Prepare spring to neutral (no animation here)
         if (springComponent != null)
         {
@@ -136,8 +178,15 @@ public class UIElement : MonoBehaviour
 
         DOTween.Kill(transform);
 
+        // Set initial states before playing tweens
+        SetInitialStatesForEnableTweens();
+
         // Play enable list
-        PlayPresetList(enableTweens, enablePlayMode, onComplete: EnableComponents);
+        PlayPresetList(enableTweens, enablePlayMode, onComplete: () =>
+        {
+            EnableComponents();
+            OnEnableFinish?.Invoke();
+        });
 
         // SFX & Events
         EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
@@ -145,8 +194,10 @@ public class UIElement : MonoBehaviour
         isEnabled = true;
     }
 
-    [Button("⏹ Disable", ButtonSizes.Medium), GUIColor(1f, 0.5f, 0.5f)]
-    public virtual void DisableElement()
+    /// <summary>
+    /// Disables the element with animations.
+    /// </summary>
+    private void DisableElementAnimated()
     {
         if (interactable != null) interactable.enabled = false;
 
@@ -154,34 +205,100 @@ public class UIElement : MonoBehaviour
 
         bool hadPresets = disableTweens != null && disableTweens.Count > 0;
 
-        if (hadPresets)
+        if (hideWhenDisabled)
         {
-            PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+            if (hadPresets)
             {
-                if (Root != null) Root.Visible = false;
-            });
-        }
-        else
-        {
-            var t = Root != null
-                ? Root.transform
-                    .DOScale(0f, 0.25f)
-                    .SetEase(Ease.InCubic)
-                : null;
-
-            if (t != null)
-            {
-                t.OnComplete(() => { if (Root != null) Root.Visible = false; });
+                PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+                {
+                    if (Root != null) Root.Visible = false;
+                    // Don't reset scale here - let the tween handle final state
+                    OnDisableFinish?.Invoke();
+                });
             }
             else
             {
-                if (Root != null) Root.Visible = false;
+                var t = Root != null
+                    ? Root.transform
+                        .DOScale(0f, 0.25f)
+                        .SetEase(Ease.InCubic)
+                    : null;
+
+                if (t != null)
+                {
+                    t.OnComplete(() => { 
+                        if (Root != null) Root.Visible = false; 
+                        // Don't reset scale here either
+                        OnDisableFinish?.Invoke();
+                    });
+                }
+                else
+                {
+                    if (Root != null) Root.Visible = false;
+                    OnDisableFinish?.Invoke();
+                }
+            }
+        }
+        else
+        {
+            // Don't hide the element, but still play disable animations if they exist
+            if (hadPresets)
+            {
+                PlayPresetList(disableTweens, disablePlayMode, onComplete: () =>
+                {
+                    OnDisableFinish?.Invoke();
+                });
+            }
+            else
+            {
+                // If no presets and not hiding, trigger completion immediately
+                OnDisableFinish?.Invoke();
             }
         }
 
         EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         OnDisable?.Invoke();
         isEnabled = false;
+    }
+
+    #endregion
+
+    #region PUBLIC ACTIONS (FORCED MODES)
+
+    /// <summary>
+    /// Forces the element to enable with animations, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("▶ Force Enable Animated", ButtonSizes.Medium), GUIColor(0.4f, 0.8f, 0.4f)]
+    public void EnableElementForceAnimated()
+    {
+        EnableElementAnimated();
+    }
+
+    /// <summary>
+    /// Forces the element to disable with animations, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("⏹ Force Disable Animated", ButtonSizes.Medium), GUIColor(0.8f, 0.4f, 0.4f)]
+    public void DisableElementForceAnimated()
+    {
+        DisableElementAnimated();
+    }
+
+    /// <summary>
+    /// Forces the element to enable instantly, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("▶ Force Enable Instant", ButtonSizes.Medium), GUIColor(0.6f, 1f, 0.6f)]
+    public void EnableElementForceInstant()
+    {
+        EnableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
+    }
+
+    /// <summary>
+    /// Forces the element to disable instantly, regardless of the playAnimations setting.
+    /// </summary>
+    [Button("⏹ Force Disable Instant", ButtonSizes.Medium), GUIColor(1f, 0.6f, 0.6f)]
+    public void DisableElementForceInstant()
+    {
+        DisableElementImmediate(toggleInteractable: true, triggerEvents: true, playAudio: true);
     }
 
     #endregion
@@ -221,6 +338,9 @@ public class UIElement : MonoBehaviour
 
         if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
         if (triggerEvents) OnEnable?.Invoke();
+        
+        // Trigger completion event immediately for instant enable
+        if (triggerEvents) OnEnableFinish?.Invoke();
     }
 
     /// <summary>
@@ -245,22 +365,122 @@ public class UIElement : MonoBehaviour
         if (toggleInteractable && interactable != null)
             interactable.enabled = false;
 
-        if (Root != null)
+        if (hideWhenDisabled && Root != null)
         {
             Root.Visible = false;
-            // Keep transform sane for next show
-            Root.transform.localScale = Vector3.one;
+            // Don't reset scale here - preserve whatever state the tweens left it in
         }
 
         isEnabled = false;
 
         if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         if (triggerEvents) OnDisable?.Invoke();
+        
+        // Trigger completion event immediately for instant disable
+        if (triggerEvents) OnDisableFinish?.Invoke();
     }
 
     #endregion
 
     #region INTERNAL HELPERS
+
+    private void SetInitialStatesForEnableTweens()
+    {
+        if (enableTweens == null || enableTweens.Count == 0) return;
+
+        foreach (var item in enableTweens)
+        {
+            if (item.preset == null) continue;
+
+            var preset = item.preset;
+            var overrideObj = item.targetOverride;
+
+            // Set common initial states for intro animations
+            switch (preset.tweenType)
+            {
+                case TweenPreset.TweenType.Scale:
+                {
+                    Transform targetTransform = GetTargetTransform(overrideObj);
+                    if (targetTransform != null)
+                    {
+                        // Only reset to zero if the scale is currently at normal size (1,1,1)
+                        // This preserves the scaled-down state from disable animations
+                        if (Vector3.Distance(targetTransform.localScale, Vector3.one) < 0.1f)
+                        {
+                            targetTransform.localScale = Vector3.zero;
+                        }
+                        // If it's already small (from disable), leave it as is for the enable animation
+                    }
+                    break;
+                }
+                case TweenPreset.TweenType.Fade:
+                {
+                    CanvasGroup cg = GetTargetCanvasGroup(overrideObj);
+                    if (cg != null)
+                    {
+                        // Start from alpha 0 for intro fade animations
+                        cg.alpha = 0f;
+                    }
+                    break;
+                }
+                case TweenPreset.TweenType.NovaScale:
+                {
+                    UIBlock uiBlock = GetTargetUIBlock(overrideObj);
+                    if (uiBlock != null)
+                    {
+                        // Start from zero scale for intro Nova UI animations
+                        uiBlock.Size = new Nova.Length3(
+                            Nova.Length.Percentage(0f),
+                            Nova.Length.Percentage(0f),
+                            Nova.Length.Percentage(0f)
+                        );
+                    }
+                    break;
+                }
+                case TweenPreset.TweenType.NovaPosition:
+                {
+                    UIBlock uiBlock = GetTargetUIBlock(overrideObj);
+                    if (uiBlock != null)
+                    {
+                        // For NovaPosition intro animations, you may want to start from an off-screen position
+                        // This could be customized based on your needs - starting from center for now
+                        uiBlock.Layout.Position = new Nova.Length3(
+                            Nova.Length.Percentage(50f),
+                            Nova.Length.Percentage(50f),
+                            Nova.Length.Percentage(0f)
+                        );
+                    }
+                    break;
+                }
+                // For Move and Rotate, let the preset handle the initial state
+                case TweenPreset.TweenType.Move:
+                case TweenPreset.TweenType.Rotate:
+                default:
+                    break;
+            }
+        }
+    }
+
+    private Transform GetTargetTransform(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is Transform t) return t;
+        if (overrideObj is Component comp) return comp.transform;
+        return this.transform;
+    }
+
+    private CanvasGroup GetTargetCanvasGroup(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is CanvasGroup cg) return cg;
+        if (overrideObj is Component comp) return comp.GetComponent<CanvasGroup>();
+        return GetComponent<CanvasGroup>();
+    }
+
+    private UIBlock GetTargetUIBlock(UnityEngine.Object overrideObj)
+    {
+        if (overrideObj is UIBlock ub) return ub;
+        if (overrideObj is Component comp) return comp.GetComponent<UIBlock>();
+        return GetComponent<UIBlock>();
+    }
 
     private void AutoCacheComponents()
     {
@@ -327,6 +547,20 @@ public class UIElement : MonoBehaviour
                 if (cg != null) return preset.ApplyTween(cg);
 
                 Debug.LogWarning($"[{name}] UIElement: Fade preset requires a CanvasGroup target (override or on this object). Skipping.");
+                return null;
+            }
+
+            case TweenPreset.TweenType.NovaScale:
+            case TweenPreset.TweenType.NovaPosition:
+            {
+                UIBlock uiBlock = null;
+                if (overrideObj is UIBlock ub) uiBlock = ub;
+                else if (overrideObj is Component compUb) uiBlock = compUb.GetComponent<UIBlock>();
+                else uiBlock = GetComponent<UIBlock>();
+
+                if (uiBlock != null) return preset.ApplyTween(uiBlock);
+
+                Debug.LogWarning($"[{name}] UIElement: {preset.tweenType} preset requires a UIBlock target (override or on this object). Skipping.");
                 return null;
             }
 
