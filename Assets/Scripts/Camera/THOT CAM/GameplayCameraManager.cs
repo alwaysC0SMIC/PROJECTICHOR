@@ -7,7 +7,7 @@ using Sirenix.OdinInspector;
 
 public class GameplayCameraManager : MonoBehaviour
 {
-    [BoxGroup("Gameplay Cameras")]
+    [Header("Gameplay Cameras")]
     [SerializeField] private CinemachineCamera gameplayVirtualCam;
     [SerializeField] private CinemachineCamera cinematicVirtualCam; // Renamed from buildVirtualCam
     [SerializeField] private PanAndZoom gameplayCam;

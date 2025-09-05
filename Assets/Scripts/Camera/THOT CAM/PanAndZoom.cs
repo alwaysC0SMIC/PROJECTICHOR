@@ -79,7 +79,32 @@ public class PanAndZoom : MonoBehaviour
     [BoxGroup("Reset")]
     [LabelText("Reset Duration")]
     [SerializeField] public float resetDuration = 0.5f;
-    
+
+    // ==== RUNTIME HELPERS (moved OUT of UNITY_EDITOR so builds succeed) ====
+
+    /// <summary>
+    /// True if the current pointer is over any Unity UI element.
+    /// Safe for builds (EventSystem null-checked).
+    /// </summary>
+    private bool IsPointerOverUIElement()
+    {
+        if (EventSystem.current == null)
+            return false;
+
+        // For mouse, the parameterless overload is fine. For touch, you can
+        // add fingerId variants if you later handle multi-touch UI.
+        return EventSystem.current.IsPointerOverGameObject();
+    }
+
+    /// <summary>
+    /// Central place to decide if camera input should be blocked.
+    /// Currently just blocks when pointer is over Unity UI.
+    /// Extend here if you later add other blockers.
+    /// </summary>
+    private bool ShouldBlockCameraInput()
+    {
+        return IsPointerOverUIElement();
+    }
 
 #if UNITY_EDITOR
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
@@ -105,33 +130,12 @@ public class PanAndZoom : MonoBehaviour
     [BoxGroup("Debug Info"), ShowInInspector, ReadOnly]
     [LabelText("📊 Input State")]
     [DisplayAsString]
-    private string Debug_InputState => 
+    private string Debug_InputState =>
         $"Enabled: {enabled} | " +
         $"AllowInput: {allowInput} | " +
         $"OverUnityUI: {IsPointerOverUIElement()} | " +
-        $"CardDragged: {CardHandManager.IsAnyCardBeingDragged} | " +
+        $"CardDragged: {CardHandManager.IsAnyCardBeingDragged} | " + // Editor-only ref is fine here
         $"Dragging: {isDragging}";
-
-    /// <summary>
-    /// Check if the pointer is over any Unity UI element
-    /// </summary>
-    private bool IsPointerOverUIElement()
-    {
-        // Check if EventSystem exists
-        if (EventSystem.current == null)
-            return false;
-
-        // Check if pointer is over UI element
-        return EventSystem.current.IsPointerOverGameObject();
-    }
-
-    /// <summary>
-    /// Check if camera input should be blocked due to UI interactions
-    /// </summary>
-    private bool ShouldBlockCameraInput()
-    {
-        return IsPointerOverUIElement();
-    }
 
     [BoxGroup("Debug Controls"), GUIColor(0.2f, 0.7f, 1f)]
     [Button(ButtonSizes.Large, Name = "Reset Camera", Icon = SdfIconType.Camera)]
@@ -177,7 +181,6 @@ public class PanAndZoom : MonoBehaviour
     [Button(ButtonSizes.Medium, Name = "Reset Unity UI Detection", Icon = SdfIconType.XCircle)]
     private void Debug_ResetUnityUIDetection()
     {
-        // Force a check of Unity UI state
         Debug.Log($"Unity UI Detection - Over UI: {IsPointerOverUIElement()}");
     }
 #endif
@@ -215,7 +218,7 @@ public class PanAndZoom : MonoBehaviour
             // Double-check UI state immediately on mouse down
             if (ShouldBlockCameraInput())
                 return;
-                
+
             touchStart = thisCamera.ScreenToWorldPoint(Input.mousePosition);
             touchStartScreen = Input.mousePosition;
             isDragging = false;
@@ -291,14 +294,14 @@ public class PanAndZoom : MonoBehaviour
         {
             Vector3 currentMousePos = Input.mousePosition;
             float deltaX = currentMousePos.x - orbitStartScreen.x;
-            
+
             // Only apply rotation if we're actually dragging (not on the first frame)
             if (Vector3.Distance(currentMousePos, orbitStartScreen) > 0.1f)
             {
                 orbitRotation += deltaX * orbitSensitivity;
                 ApplyOrbitRotation();
             }
-            
+
             orbitStartScreen = currentMousePos; // Update for next frame
         }
         if (Input.GetMouseButtonUp(1))
@@ -368,5 +371,4 @@ public class PanAndZoom : MonoBehaviour
             }, 1f, resetDuration);
         }
     }
-
 }
