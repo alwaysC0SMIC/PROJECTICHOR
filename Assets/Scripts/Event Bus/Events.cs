@@ -89,3 +89,9 @@ public struct AudioEvent : IEvent
 }
 
 #endregion
+
+public struct EnemyDestroyedEvent : IEvent
+{
+    public GameObject enemyObject;
+    public SO_Enemy enemyData;
+}

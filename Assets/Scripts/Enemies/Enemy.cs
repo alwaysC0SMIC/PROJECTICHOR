@@ -80,6 +80,9 @@ public class Enemy : MonoBehaviour
     {
         EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = true, ichorAmount = 10});
 
+        // Notify the EnemyManager that this enemy has been destroyed
+        EventBus<EnemyDestroyedEvent>.Raise(new EnemyDestroyedEvent { enemyObject = this.gameObject, enemyData = this.enemyData });
+
         Instantiate(deathEffect, transform.position, transform.rotation);
 
         transform.DOScale(Vector3.zero, 0.2f)
