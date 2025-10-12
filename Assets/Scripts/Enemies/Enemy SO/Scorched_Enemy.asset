@@ -20,4 +20,4 @@ MonoBehaviour:
   attackRange: 1.5
   attackRate: 1
   attackEffectPrefab: {fileID: 0}
-  threatCost: 10
+  threatCost: 5

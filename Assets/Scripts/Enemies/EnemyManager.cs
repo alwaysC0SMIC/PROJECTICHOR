@@ -7,15 +7,6 @@ using System.Linq;
 using TMPro;
 
 [Serializable]
-public class WaveArchetype
-{
-    public string name;
-    public List<SO_Enemy> allowedEnemyTypes;
-    [Tooltip("Higher weight means this archetype is more likely to be chosen.")]
-    public float baseWeight = 1f;
-}
-
-[Serializable]
 public class WaveSettings
 {
     [Title("Threat Progression")]
@@ -34,8 +25,17 @@ public class WaveSettings
     [Range(0.5f, 1.5f), Tooltip("The maximum difficulty increase/decrease from PBA.")]
     public float pbaClamp = 1.3f;
 
-    [Title("Wave Composition")]
-    public List<WaveArchetype> waveArchetypes;
+    [Title("Procedural Wave Generation")]
+    [Tooltip("A new, more powerful enemy type will be eligible for spawning every this many waves.")]
+    public int newEnemyIntroductionInterval = 3;
+    [Tooltip("The maximum number of unique enemy types that can appear in a single wave.")]
+    public int maxEnemyTypesPerWave = 3;
+
+    [Title("Wave Focus Chances")]
+    [Range(0, 1), Tooltip("The chance for a wave to be focused on numerous, cheap enemies.")]
+    public float swarmFocusChance = 0.4f;
+    [Range(0, 1), Tooltip("The chance for a wave to be focused on a few, expensive enemies.")]
+    public float eliteFocusChance = 0.3f;
 }
 
 public class EnemyManager : MonoBehaviour
@@ -56,12 +56,19 @@ public class EnemyManager : MonoBehaviour
     [ReadOnly, ShowInInspector] private int currentWaveNumber = 0;
     [ReadOnly, ShowInInspector] private bool isSpawning = false;
     [ReadOnly, ShowInInspector] private List<GameObject> activeEnemies = new List<GameObject>();
-    
+
     private List<List<Transform>> waypoints = new List<List<Transform>>();
     private EventBinding<PathwayTransformsEvent> pathwayTransformsBinding;
     private EventBinding<EnemyDestroyedEvent> enemyDestroyedBinding;
     private EventBinding<UpdateGameStateEvent> gameStateBinding;
 
+    // Sorted list of enemies used for procedural generation
+    private List<SO_Enemy> sortedEnemyDataList;
+
+    private void Awake()
+    {
+        SortEnemyData();
+    }
 
 
     #region EVENTS
@@ -94,6 +101,15 @@ public class EnemyManager : MonoBehaviour
 
     #endregion
 
+    private void SortEnemyData()
+    {
+        if (enemyDataList == null || enemyDataList.Count == 0)
+        {
+            sortedEnemyDataList = new List<SO_Enemy>();
+            return;
+        }
+        sortedEnemyDataList = enemyDataList.OrderBy(e => e.threatCost).ToList();
+    }
     private void OnPathwayTransformsCreated(PathwayTransformsEvent evt)
     {
         waypoints.Clear();
@@ -149,16 +165,17 @@ public class EnemyManager : MonoBehaviour
 
     private IEnumerator SpawnWave()
     {
-        if (waypoints.Count == 0 || waveSettings.waveArchetypes.Count == 0)
+        if (waypoints.Count == 0 || sortedEnemyDataList.Count == 0)
         {
-            Debug.LogWarning("Cannot spawn wave: No waypoints or archetypes defined.");
+            Debug.LogWarning("Cannot spawn wave: No waypoints or enemies defined.");
             yield break;
         }
 
         float threatBudget = CalculateThreatBudget();
-        WaveArchetype archetype = SelectWaveArchetype();
 
-        Debug.Log($"Wave {currentWaveNumber}: Threat Budget={threatBudget:F0}, Archetype='{archetype.name}'");
+        // Procedurally determine the composition of this wave
+        List<SO_Enemy> waveEnemyPool = DetermineWaveEnemyPool();
+        Debug.Log($"Wave {currentWaveNumber}: Threat Budget={threatBudget:F0}. Pool: [{string.Join(", ", waveEnemyPool.Select(e => e.enemyName))}]");
 
         // This is a simple implementation. A more advanced one would use the "Lane Defense Score"
         // and distribute the budget unevenly. For now, we split it evenly.
@@ -166,7 +183,7 @@ public class EnemyManager : MonoBehaviour
 
         for (int i = 0; i < waypoints.Count; i++)
         {
-            StartCoroutine(SpawnForLane(i, budgetPerLane, archetype));
+            StartCoroutine(SpawnForLane(i, budgetPerLane, waveEnemyPool));
         }
 
         // The spawning of enemies for this wave is complete.
@@ -174,7 +191,7 @@ public class EnemyManager : MonoBehaviour
         yield return null;
     }
 
-    private IEnumerator SpawnForLane(int laneIndex, float budget, WaveArchetype archetype)
+    private IEnumerator SpawnForLane(int laneIndex, float budget, List<SO_Enemy> enemyPool)
     {
         List<Transform> laneWaypoints = waypoints[laneIndex];
         if (laneWaypoints.Count == 0) yield break;
@@ -183,18 +200,16 @@ public class EnemyManager : MonoBehaviour
 
         while (budget > 0)
         {
-            // Filter enemies that are allowed by the archetype
-            var availableEnemies = archetype.allowedEnemyTypes
-                .Where(e => e.threatCost > 0 && e.threatCost <= budget)
+            var affordableEnemies = enemyPool
+                .Where(e => e.threatCost <= budget && e.threatCost > 0)
                 .ToList();
 
-            if (availableEnemies.Count == 0)
+            if (affordableEnemies.Count == 0)
             {
-                // Cannot afford any more enemies in this archetype
                 break;
             }
 
-            SO_Enemy enemyToSpawn = availableEnemies[UnityEngine.Random.Range(0, availableEnemies.Count)];
+            SO_Enemy enemyToSpawn = affordableEnemies[UnityEngine.Random.Range(0, affordableEnemies.Count)];
 
             if (enemyToSpawn.prefab == null)
             {
@@ -212,7 +227,7 @@ public class EnemyManager : MonoBehaviour
             yield return new WaitForSeconds(UnityEngine.Random.Range(0.3f, 1.0f));
         }
     }
-    
+
     private void Update()
     {
         // Clean up destroyed enemies from the list
@@ -242,32 +257,62 @@ public class EnemyManager : MonoBehaviour
         return baseBudget * pba;
     }
 
-    private WaveArchetype SelectWaveArchetype()
+    private List<SO_Enemy> DetermineWaveEnemyPool()
     {
-        // This is a simple random selection. A more advanced system would
-        // analyze player towers and adjust weights.
-        float totalWeight = waveSettings.waveArchetypes.Sum(a => a.baseWeight);
-        float randomPoint = UnityEngine.Random.Range(0, totalWeight);
+        // 1. Determine which enemies are available based on the current wave number
+        int maxEnemyIndex = (currentWaveNumber - 1) / waveSettings.newEnemyIntroductionInterval;
+        int availableEnemyCount = Mathf.Min(sortedEnemyDataList.Count, maxEnemyIndex + 1);
+        var availableEnemies = sortedEnemyDataList.Take(availableEnemyCount).ToList();
 
-        foreach (var archetype in waveSettings.waveArchetypes)
+        if (availableEnemies.Count == 0) return new List<SO_Enemy>();
+
+        // 2. Determine the focus for this wave (Swarm, Elite, or Mixed)
+        float roll = UnityEngine.Random.value;
+        List<SO_Enemy> selectedPool = new List<SO_Enemy>();
+
+        if (roll < waveSettings.swarmFocusChance) // Swarm wave
         {
-            if (randomPoint < archetype.baseWeight) return archetype;
-            randomPoint -= archetype.baseWeight;
+            // Focus on the cheapest 33% of available enemies
+            int count = Mathf.Max(1, availableEnemies.Count / 3);
+            selectedPool = availableEnemies.Take(count).ToList();
+        }
+        else if (roll < waveSettings.swarmFocusChance + waveSettings.eliteFocusChance) // Elite wave
+        {
+            // Focus on the most expensive 33% of available enemies
+            int count = Mathf.Max(1, availableEnemies.Count / 3);
+            selectedPool = availableEnemies.Skip(availableEnemies.Count - count).ToList();
+        }
+        else // Mixed wave
+        {
+            selectedPool = availableEnemies;
         }
 
-        return waveSettings.waveArchetypes[0]; // Fallback
+        // 3. Select a subset of enemies for this wave's pool to create variety
+        List<SO_Enemy> finalPool = new List<SO_Enemy>();
+        int typesToSelect = Mathf.Min(selectedPool.Count, waveSettings.maxEnemyTypesPerWave);
+
+        while (finalPool.Count < typesToSelect)
+        {
+            SO_Enemy candidate = selectedPool[UnityEngine.Random.Range(0, selectedPool.Count)];
+            if (!finalPool.Contains(candidate))
+            {
+                finalPool.Add(candidate);
+            }
+        }
+
+        return finalPool;
     }
 
     [Button("Spawn Enemy")]
     public void SpawnEnemy()
     {
-        if (enemyDataList.Count == 0 || enemyDataList[0].prefab == null)
+        if (sortedEnemyDataList.Count == 0 || sortedEnemyDataList[0].prefab == null)
         {
             Debug.LogError("Cannot spawn test enemy: Enemy data list is empty or the first enemy is missing a prefab.");
             return;
         }
 
-        GameObject enemy = Instantiate(enemyDataList[0].prefab, waypoints[0][0].position, Quaternion.identity, transform);
-        enemy.GetComponent<Enemy>().Initialize(enemyDataList[0], waypoints[0]);
+        GameObject enemy = Instantiate(sortedEnemyDataList[0].prefab, waypoints[0][0].position, Quaternion.identity, transform);
+        enemy.GetComponent<Enemy>().Initialize(sortedEnemyDataList[0], waypoints[0]);
     }
 }
