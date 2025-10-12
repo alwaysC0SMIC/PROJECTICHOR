@@ -6,6 +6,10 @@ public class SO_Enemy : ScriptableObject
 {
     [TitleGroup("General Info")]
     [SerializeField] public string enemyName = "New Enemy";
+    [TitleGroup("General Info")]
+    [AssetsOnly]
+    [Tooltip("The prefab for this enemy.")]
+    [SerializeField] public GameObject prefab;
 
     [TitleGroup("Combat Stats")]
     [SerializeField] public float maxhealth = 100f;

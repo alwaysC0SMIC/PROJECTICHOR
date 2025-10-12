@@ -45,8 +45,6 @@ public class EnemyManager : MonoBehaviour
     [SerializeField] private HexEnvironmentManager hexEnvironmentManager;
     [TitleGroup("Setup")]
     [SerializeField] private List<SO_Enemy> enemyDataList;
-    [TitleGroup("Setup")]
-    [SerializeField] private GameObject enemyPrefab;
 
     [TitleGroup("Wave Configuration")]
     [SerializeField] private WaveSettings waveSettings;
@@ -198,7 +196,13 @@ public class EnemyManager : MonoBehaviour
 
             SO_Enemy enemyToSpawn = availableEnemies[UnityEngine.Random.Range(0, availableEnemies.Count)];
 
-            GameObject enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity, transform);
+            if (enemyToSpawn.prefab == null)
+            {
+                Debug.LogError($"Enemy type '{enemyToSpawn.name}' is missing a prefab. Skipping spawn.", enemyToSpawn);
+                continue;
+            }
+
+            GameObject enemy = Instantiate(enemyToSpawn.prefab, spawnPosition, Quaternion.identity, transform);
             enemy.GetComponent<Enemy>().Initialize(enemyToSpawn, laneWaypoints);
             activeEnemies.Add(enemy);
 
@@ -257,7 +261,13 @@ public class EnemyManager : MonoBehaviour
     [Button("Spawn Enemy")]
     public void SpawnEnemy()
     {
-        GameObject enemy = Instantiate(enemyPrefab, waypoints[0][0].position, Quaternion.identity, transform);
+        if (enemyDataList.Count == 0 || enemyDataList[0].prefab == null)
+        {
+            Debug.LogError("Cannot spawn test enemy: Enemy data list is empty or the first enemy is missing a prefab.");
+            return;
+        }
+
+        GameObject enemy = Instantiate(enemyDataList[0].prefab, waypoints[0][0].position, Quaternion.identity, transform);
         enemy.GetComponent<Enemy>().Initialize(enemyDataList[0], waypoints[0]);
     }
 }
