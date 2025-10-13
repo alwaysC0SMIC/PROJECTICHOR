@@ -115,6 +115,7 @@ public class HexTile : MonoBehaviour, IInteractable
 
     void Start()
     {
+
         // Initialize renderer reference if not assigned
         if (tileRenderer == null)
             tileRenderer = GetComponent<Renderer>();
