@@ -19,6 +19,7 @@ public class Tower : MonoBehaviour
     //ATTACK PREFABS
     [SerializeField] private GameObject lanternKeeperAttackEffectPrefab;
     [SerializeField] private GameObject eyeTownEffectPrefab;
+    [SerializeField] private GameObject witchAttackEffectPrefab;
 
     private GameObject currentAttackEffect;
     private Transform currentAttackPoint;
@@ -27,6 +28,7 @@ public class Tower : MonoBehaviour
 
     [SerializeField] Transform lanternKeeperAttackPoint;
     [SerializeField] Transform eyeTowerAttackPoint;
+    [SerializeField] Transform witchAttackPoint;
 
     private float rotationSpeed = 5.0f; // Speed of rotation in seconds
 
@@ -80,6 +82,12 @@ public class Tower : MonoBehaviour
                 towerModels[1].SetActive(true);
                 currentAttackEffect = eyeTownEffectPrefab;
                 currentAttackPoint = eyeTowerAttackPoint; // Assuming eye tower uses the same attack point
+                break;
+
+            case "Witch":
+                towerModels[2].SetActive(true);
+                currentAttackEffect = witchAttackEffectPrefab;
+                currentAttackPoint = witchAttackPoint;
                 break;
 
             // case "Arrow Tower":

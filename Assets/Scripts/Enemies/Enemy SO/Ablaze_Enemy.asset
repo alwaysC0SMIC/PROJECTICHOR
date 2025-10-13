@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyName: Ablaze Enemy
   prefab: {fileID: 865637536023156890, guid: a1db11644de66c9458554bc0072031de, type: 3}
+  droppedIchor: 3
   maxhealth: 100
   speed: 0.5
   damage: 5
   attackRange: 1.5
   attackRate: 1
-  attackEffectPrefab: {fileID: 0}
   threatCost: 10

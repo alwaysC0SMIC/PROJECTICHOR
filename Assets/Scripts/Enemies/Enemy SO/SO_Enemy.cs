@@ -10,6 +10,8 @@ public class SO_Enemy : ScriptableObject
     [AssetsOnly]
     [Tooltip("The prefab for this enemy.")]
     [SerializeField] public GameObject prefab;
+    [SerializeField] public int droppedIchor = 5;
+
 
     [TitleGroup("Combat Stats")]
     [SerializeField] public float maxhealth = 100f;
@@ -17,7 +19,6 @@ public class SO_Enemy : ScriptableObject
     [SerializeField] public float damage = 10f;
     [SerializeField] public float attackRange = 2f;
     [SerializeField] public float attackRate = 1f;
-    [SerializeField] public GameObject attackEffectPrefab;
 
     [TitleGroup("Wave System")]
     [Tooltip("The cost of this enemy for the procedural wave budget. Higher cost means a greater threat.")]

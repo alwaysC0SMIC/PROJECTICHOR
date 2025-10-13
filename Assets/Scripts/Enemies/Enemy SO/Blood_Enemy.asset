@@ -12,12 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67db428a4ce79e848a5aac18c5953107, type: 3}
   m_Name: Blood_Enemy
   m_EditorClassIdentifier: 
-  enemyName: Scorched Enemy
-  prefab: {fileID: 6142048736492526578, guid: 0f20c5d591c77f04b954bb741ba73247, type: 3}
+  enemyName: Blood Enemy
+  prefab: {fileID: 8332876461104529562, guid: c021a34d44ab0a8428d28b2142189eed, type: 3}
   maxhealth: 150
   speed: 0.4
-  damage: 7
+  damage: 10
   attackRange: 1.5
   attackRate: 1
-  attackEffectPrefab: {fileID: 0}
   threatCost: 15

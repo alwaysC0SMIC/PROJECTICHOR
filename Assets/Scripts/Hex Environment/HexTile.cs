@@ -521,7 +521,7 @@ public class HexTile : MonoBehaviour, IInteractable
                 DestroyImmediate(spawnedLight);
             }
             spawnedLight = null;
-            Debug.Log($"[HexTile] Removed edge spawn light for {gameObject.name}");
+            //Debug.Log($"[HexTile] Removed edge spawn light for {gameObject.name}");
         }
     }
 
@@ -675,11 +675,11 @@ public class HexTile : MonoBehaviour, IInteractable
 
     private System.Collections.IEnumerator TestHoverCoroutine()
     {
-        Debug.Log($"[HexTile] Testing hover effect on {gameObject.name}");
+        //Debug.Log($"[HexTile] Testing hover effect on {gameObject.name}");
         OnHover();
         yield return new WaitForSeconds(1f);
         OnHoverExit();
-        Debug.Log($"[HexTile] Hover effect test completed");
+        //Debug.Log($"[HexTile] Hover effect test completed");
     }
 #endif
 
@@ -701,13 +701,13 @@ public class HexTile : MonoBehaviour, IInteractable
             if (hexType == HexType.DefenderSpot && !isOccupied && transformSpring != null)
             {
                 transformSpring.SetTargetPosition(hoverPosition);
-                Debug.Log($"[HexTile] Hovering over unoccupied defender hex {coordinates} - Spring target set to Y: {hoverPosition.y:F2}");
+                //Debug.Log($"[HexTile] Hovering over unoccupied defender hex {coordinates} - Spring target set to Y: {hoverPosition.y:F2}");
             }
             else
             {
                 // Direct position setting for all other hoverable tiles (CenterHub, Environment, occupied defenders)
                 transform.position = hoverPosition;
-                Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position set to Y: {hoverPosition.y:F2} (direct)");
+               // Debug.Log($"[HexTile] Hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position set to Y: {hoverPosition.y:F2} (direct)");
             }
         }
 
@@ -731,11 +731,11 @@ public class HexTile : MonoBehaviour, IInteractable
             if (match != null)
             {
                 match.SetActive(true);
-                Debug.Log($"[HexTile] Preview '{name}' activated for buildable hex {coordinates} (Build Mode: {isBuildModeActive})");
+                //Debug.Log($"[HexTile] Preview '{name}' activated for buildable hex {coordinates} (Build Mode: {isBuildModeActive})");
             }
             else
             {
-                Debug.LogWarning($"[HexTile] No preview prefab found with name '{name}' on tile at {coordinates}");
+                //Debug.LogWarning($"[HexTile] No preview prefab found with name '{name}' on tile at {coordinates}");
             }
         }
     }
@@ -753,13 +753,13 @@ public class HexTile : MonoBehaviour, IInteractable
             if (hexType == HexType.DefenderSpot && !isOccupied && transformSpring != null)
             {
                 transformSpring.SetTargetPosition(originalPosition);
-                Debug.Log($"[HexTile] Stopped hovering over unoccupied defender hex {coordinates} - Spring target reset to Y: {originalPosition.y:F2}");
+                //Debug.Log($"[HexTile] Stopped hovering over unoccupied defender hex {coordinates} - Spring target reset to Y: {originalPosition.y:F2}");
             }
             else
             {
                 // Direct position setting for all other hoverable tiles (CenterHub, Environment, occupied defenders)
                 transform.position = originalPosition;
-                Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position reset to Y: {originalPosition.y:F2} (direct)");
+                //Debug.Log($"[HexTile] Stopped hovering over hex {coordinates} (Type: {hexType}, Occupied: {isOccupied}) - Position reset to Y: {originalPosition.y:F2} (direct)");
             }
         }
 
@@ -769,7 +769,7 @@ public class HexTile : MonoBehaviour, IInteractable
 
     public void OnClick()
     {
-        Debug.Log($"[HexTile] Clicked on hex {coordinates} (Type: {hexType})");
+        //Debug.Log($"[HexTile] Clicked on hex {coordinates} (Type: {hexType})");
 
         // Additional click logic can be added here if needed
         if (CanBuild())
