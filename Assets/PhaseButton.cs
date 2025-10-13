@@ -24,6 +24,7 @@ public class PhaseButton : MonoBehaviour
         else if (GameManager.Instance.currentState == GameState.Playing)
         {
             //TOGGLE PAUSE
+            GameTime.TogglePause();
             if (GameTime.IsPaused)
             {
                 //IS BEING UN PAUSED
@@ -34,9 +35,6 @@ public class PhaseButton : MonoBehaviour
                 //IS BEING PAUSED
                 buttonImage.sprite = pauseIcon;
             }
-
-
-            GameTime.TogglePause();
         }
 
     }

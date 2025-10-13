@@ -132,14 +132,14 @@ public class Builder : MonoBehaviour
             if (lastHoveredHexTile != null)
             {
                 lastHoveredHexTile.OnHoverExit();
-                Debug.Log($"[Builder] GENERAL HOVER: No longer hovering over hex {lastHoveredHexTile.coordinates}");
+                //Debug.Log($"[Builder] GENERAL HOVER: No longer hovering over hex {lastHoveredHexTile.coordinates}");
             }
             
             // Call OnHover on the newly hovered hex
             if (currentHovered != null)
             {
                 currentHovered.OnHover(buildData);
-                Debug.Log($"[Builder] GENERAL HOVER: Now hovering over hex {currentHovered.coordinates} (Type: {currentHovered.hexType})");
+                //Debug.Log($"[Builder] GENERAL HOVER: Now hovering over hex {currentHovered.coordinates} (Type: {currentHovered.hexType})");
             }
             
             lastHoveredHexTile = currentHovered;

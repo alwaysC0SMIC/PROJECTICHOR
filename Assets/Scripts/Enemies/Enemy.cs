@@ -78,7 +78,10 @@ public class Enemy : MonoBehaviour
 
     public void TriggerDeath()
     {
-        EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = true, ichorAmount = 10});
+        EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent() { addOrRemove = true, ichorAmount = enemyData.droppedIchor});
+
+        // Notify the EnemyManager that this enemy has been destroyed
+        EventBus<EnemyDestroyedEvent>.Raise(new EnemyDestroyedEvent { enemyObject = this.gameObject, enemyData = this.enemyData });
 
         Instantiate(deathEffect, transform.position, transform.rotation);
 

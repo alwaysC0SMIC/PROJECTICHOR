@@ -53,25 +53,25 @@ public class FlexCardUI : MonoBehaviour
     }
     private void AnimateCostTextColor()
     {
-        // if (cardCostText != null)
-        // {
-        //     Color startColor = Color.white;
-        //     Color endColor = Color.red;
-        //     float halfDuration = 0.25f;
-        //     DOTween.To(
-        //         () => cardCostText.color,
-        //         x => cardCostText.color = x,
-        //         endColor,
-        //         halfDuration
-        //     ).OnComplete(() => {
-        //         DOTween.To(
-        //             () => cardCostText.color,
-        //             x => cardCostText.color = x,
-        //             startColor,
-        //             halfDuration
-        //         );
-        //     });
-        // }
+        if (cardImage != null)
+        {
+            Color startColor = Color.white;
+            Color endColor = Color.red;
+            float halfDuration = 0.25f;
+            DOTween.To(
+                () => cardImage.color,
+                x => cardImage.color = x,
+                endColor,
+                halfDuration
+            ).OnComplete(() => {
+                DOTween.To(
+                    () => cardImage.color,
+                    x => cardImage.color = x,
+                    startColor,
+                    halfDuration
+                );
+            });
+        }
     }
 
 
@@ -79,15 +79,18 @@ public class FlexCardUI : MonoBehaviour
     {
         defenderData = defender;
         cardImage.sprite = defenderData.defenderArt;
-        uIEffect.color = defenderData.hdrColorForCard;
-        cardNameText.text = defenderData.defenderName;
-        // //cardDescriptionText.text = defenderData.defenderDescription;
-        cardCostText.text = "Cost: " + defenderData.cost.ToString();
+
+        //cardNameText.text = defenderData.defenderName;
+        //cardCostText.text = "Cost: " + defenderData.cost.ToString();
+
+        cardNameText.text = "";
+        cardCostText.text = "";
     }
 
     private void OnDragEnd(FlexalonInteractable arg0)
     {
         backgroundImage.color = new Color(1, 1, 1, 1f);
+        cardImage.color = new Color(1, 1, 1, 1f);
         EventBus<ToggleGameplayCamEvent>.Raise(new ToggleGameplayCamEvent { allowCam = true });
         EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = false, defenderToBuild = defenderData });
 
@@ -101,6 +104,7 @@ public class FlexCardUI : MonoBehaviour
         EventBus<BuildingEvent>.Raise(new BuildingEvent { isBuilding = true, defenderToBuild = defenderData });
 
         //flexalonObject.Rotation = Quaternion.Euler(0, 0, 90F);
+        cardImage.color = new Color(1, 1, 1, 0.1f); 
         backgroundImage.color = new Color(1, 1, 1, 0.1f); 
     }
 
