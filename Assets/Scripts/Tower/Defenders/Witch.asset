@@ -15,7 +15,7 @@ MonoBehaviour:
   hdrColorForCard: {r: 0.24307781, g: 2.9960783, b: 0.55473834, a: 1}
   defenderName: Witch
   defenderDescription: 
-  defenderArt: {fileID: 21300000, guid: 4daf00d20870d244d95885de4376346d, type: 3}
+  defenderArt: {fileID: 21300000, guid: ac47d00e1c1d0c341b31da5a5aefb6e4, type: 3}
   cost: 200
   defenderHealth: 150
   defenderDamage: 25
