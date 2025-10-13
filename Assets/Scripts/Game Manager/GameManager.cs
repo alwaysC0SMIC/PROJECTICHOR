@@ -1,11 +1,12 @@
 using System;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private HexEnvironmentManager hexEnvironmentManager;
-    [SerializeField] private GameObject deathScreenPrefab;
+    //[SerializeField] private GameObject deathScreenPrefab;
     public GameState currentState;
 
     [Header("CURRENCY")]
@@ -31,7 +32,7 @@ public class GameManager : MonoBehaviour
 
     void OnEnable()
     {
-        deathScreenPrefab.SetActive(false);
+        //deathScreenPrefab.SetActive(false);
 
         gameStateBinding = new EventBinding<UpdateGameStateEvent>(OnGameStateUpdated);
         EventBus<UpdateGameStateEvent>.Register(gameStateBinding);
@@ -58,7 +59,8 @@ public class GameManager : MonoBehaviour
 
         if(currentState == GameState.Lose)
         {
-            deathScreenPrefab.SetActive(true);
+            //deathScreenPrefab.SetActive(true);
+            SceneManager.LoadScene("DeathScreen");
         }
         else if(currentState == GameState.Win)
         {
