@@ -149,13 +149,13 @@ public class FlexCardUI : MonoBehaviour
         {
             // Mouse is on left half - rotate clockwise (positive Z)
             rotationDirection = Vector3.forward * rotationForce;
-            Debug.Log($"[FlexCardUI] Mouse on LEFT half of image - rotating clockwise");
+            //Debug.Log($"[FlexCardUI] Mouse on LEFT half of image - rotating clockwise");
         }
         else
         {
             // Mouse is on right half - rotate counter-clockwise (negative Z)
             rotationDirection = Vector3.forward * -rotationForce;
-            Debug.Log($"[FlexCardUI] Mouse on RIGHT half of image - rotating counter-clockwise");
+            //Debug.Log($"[FlexCardUI] Mouse on RIGHT half of image - rotating counter-clockwise");
         }
 
         transformSpringComponent.AddVelocityRotation(rotationDirection);
