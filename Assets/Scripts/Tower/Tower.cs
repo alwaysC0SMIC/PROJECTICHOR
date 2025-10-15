@@ -20,6 +20,8 @@ public class Tower : MonoBehaviour
     [SerializeField] private GameObject lanternKeeperAttackEffectPrefab;
     [SerializeField] private GameObject eyeTownEffectPrefab;
     [SerializeField] private GameObject witchAttackEffectPrefab;
+    [SerializeField] private GameObject heartAttackEffectPrefab; // REQUIRES BEHAVIOUR MODIFICATION
+    [SerializeField] private GameObject angelAttackEffectPrefab;
 
     private GameObject currentAttackEffect;
     private Transform currentAttackPoint;
@@ -29,6 +31,8 @@ public class Tower : MonoBehaviour
     [SerializeField] Transform lanternKeeperAttackPoint;
     [SerializeField] Transform eyeTowerAttackPoint;
     [SerializeField] Transform witchAttackPoint;
+    [SerializeField] Transform heartAttackPoint;
+    [SerializeField] Transform angelAttackPoint;
 
     private float rotationSpeed = 5.0f; // Speed of rotation in seconds
 
@@ -90,15 +94,17 @@ public class Tower : MonoBehaviour
                 currentAttackPoint = witchAttackPoint;
                 break;
 
-            // case "Arrow Tower":
-            //     towerModels[2].SetActive(true);
-            //     break;
-            // case "Cannon Tower":
-            //     towerModels[3].SetActive(true);
-            //     break;
-            // case "Mage Tower":
-            //     towerModels[4].SetActive(true);
-            //     break;
+            case "Heart Reliquary":
+                towerModels[3].SetActive(true);
+                currentAttackEffect = heartAttackEffectPrefab;
+                currentAttackPoint = heartAttackPoint;
+                break;
+
+            case "The Angel":
+                towerModels[4].SetActive(true);
+                currentAttackEffect = angelAttackEffectPrefab;
+                currentAttackPoint = angelAttackPoint;
+                break;
 
             default:
                 Debug.LogWarning($"[Tower] No model found for defender name: {defenderData.defenderName}");

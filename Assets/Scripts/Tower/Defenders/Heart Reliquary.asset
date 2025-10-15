@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69d7192cf4b64cd458a0553fa80a1526, type: 3}
+  m_Name: Heart Reliquary
+  m_EditorClassIdentifier: 
+  hdrColorForCard: {r: 2.9960783, g: 0.27629066, b: 0.25098032, a: 1}
+  defenderName: Heart Reliquary
+  defenderDescription: 
+  defenderArt: {fileID: 21300000, guid: 59c0c044b3d9d3445a2b9594a5bc2569, type: 3}
+  cost: 200
+  defenderHealth: 150
+  defenderDamage: 25
+  range: 5
+  attackSpeed: 2
