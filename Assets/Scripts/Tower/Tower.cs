@@ -2,11 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using NUnit.Framework;
 public class Tower : MonoBehaviour
 {
     //VARIABLES
-    [SerializeField] private SO_Defender defenderData;
-
+    [SerializeField] public SO_Defender defenderData;
+    [SerializeField] public int towerLevel = 1;
     [SerializeField] public float maxhealth = 100.0f;
     [SerializeField] public float currentHealth = 100.0f;
     [SerializeField] public RadialHealth radialHealth;
@@ -128,6 +129,40 @@ public class Tower : MonoBehaviour
         }
 
         isInitialized = true;
+    }
+
+    public void UpgradeTower(int level)
+    {
+        towerLevel = level;
+        UpdateTowerStats();
+    }
+
+    private void UpdateTowerStats()
+    {
+        if (defenderData != null)
+        {
+            damage = defenderData.defenderDamage * (1 + towerLevel / 20); // Example: damage scales with cost
+
+            attackRange = defenderData.range;
+            attackRate = defenderData.attackSpeed * (1 + towerLevel / 20); // Faster attack speed reduces cooldown
+
+            maxhealth = defenderData.defenderHealth * (1 + towerLevel / 20);
+            currentHealth = maxhealth * (1 + towerLevel / 20);
+        }
+        else
+        {
+            Debug.LogWarning("[Tower] Initialize called with null defenderData.");
+        }
+    }
+
+    public void ResetTowerLevel()
+    {
+        towerLevel = 1;
+        damage = defenderData.defenderDamage; // Example: damage scales with cost
+        attackRange = defenderData.range;
+        attackRate = defenderData.attackSpeed; // Faster attack speed reduces cooldown
+        maxhealth = defenderData.defenderHealth;
+        currentHealth = maxhealth;
     }
 
     void Start()

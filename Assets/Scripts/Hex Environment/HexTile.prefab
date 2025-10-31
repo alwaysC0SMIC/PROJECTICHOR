@@ -8098,6 +8098,7 @@ GameObject:
   - component: {fileID: 8937906654234279112}
   - component: {fileID: 8219796405013255238}
   - component: {fileID: 1300362496968013691}
+  - component: {fileID: 3068148983199604675}
   m_Layer: 10
   m_Name: Tower
   m_TagString: Untagged
@@ -8196,6 +8197,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defenderData: {fileID: 0}
+  towerLevel: 1
   maxhealth: 100
   currentHealth: 100
   radialHealth: {fileID: 723276162627627244}
@@ -8243,6 +8245,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3068148983199604675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8275540925748176510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 854ab563dc5b8fb4ba10efe9e7ca2901, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tower: {fileID: 8219796405013255238}
 --- !u!1 &8300003740067102961
 GameObject:
   m_ObjectHideFlags: 0
