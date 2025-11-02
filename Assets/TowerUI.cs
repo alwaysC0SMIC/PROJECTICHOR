@@ -5,7 +5,6 @@ using DG.Tweening;
 using UnityEngine;
 using AllIn1SpringsToolkit;
 
-
 public class TowerUI : MonoBehaviour
 {
     public static TowerUI Instance;
@@ -23,6 +22,7 @@ public class TowerUI : MonoBehaviour
     [SerializeField] GameObject uiRoot;
     [SerializeField] TMP_Text levelText;
     [SerializeField] TMP_Text upgradeText;
+    [SerializeField] TMP_Text towerStatsText;
     public int upgradeAmount = 50;
     [SerializeField] TMP_Text sellText;
     public int sellAmount = 50;
@@ -43,16 +43,29 @@ public class TowerUI : MonoBehaviour
         ShowUI(true);
     }
 
-    private void UpdateUI()
+    // made this PUBLIC so Tower can tell UI to update
+    public void UpdateUI()
     {
+        if (currentSelectedTower == null) return;
+
         levelText.text = "Level " + currentSelectedTower.towerLevel;
 
-        upgradeAmount =   currentSelectedTower.towerLevel*50;
+        upgradeAmount = currentSelectedTower.towerLevel * 50;
         upgradeText.text = "Upgrade -" + upgradeAmount;
 
         sellAmount = currentSelectedTower.towerLevel * 25;
         sellText.text = "Sell +" + sellAmount;
-        
+
+        towerStatsText.text =
+            "Health: " + currentSelectedTower.maxhealth + "\n" +
+            "Damage: " + currentSelectedTower.damage + "\n" +
+            "Range: " + currentSelectedTower.attackRange;
+    }
+
+    // simple helper for external calls
+    public void ForceRefresh()
+    {
+        UpdateUI();
     }
 
     public void CloseUI()
@@ -74,13 +87,14 @@ public class TowerUI : MonoBehaviour
         {
             NotEnoughMoneyPrompt();
         }
-        
+
         canUpgrade = false;
         Invoke(nameof(ResetUpgradeCooldown), 0.2f);
     }
 
     private void ResetUpgradeCooldown()
     {
+        UpdateUI();
         canUpgrade = true;
     }
 
@@ -88,7 +102,7 @@ public class TowerUI : MonoBehaviour
     {
         currentSelectedTower.ResetTowerLevel();
         currentSelectedTower.TakeDamage(999999999999999999999F);
-        EventBus<AddOrRemoveIchorEvent>.Raise( new AddOrRemoveIchorEvent {  addOrRemove =  true, ichorAmount = sellAmount} ); 
+        EventBus<AddOrRemoveIchorEvent>.Raise(new AddOrRemoveIchorEvent { addOrRemove = true, ichorAmount = sellAmount });
         CloseUI();
     }
 

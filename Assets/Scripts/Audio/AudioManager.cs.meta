@@ -1,2 +1,21 @@
 fileFormatVersion: 2
-guid: a6c1bf908a565a5409574b8f97897bbb
+guid: 091323541e2ca894eb406e2f96743e3b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - musicSource: {instanceID: 0}
+  - uiSource: {instanceID: 0}
+  - musicMixerGroup: {instanceID: 0}
+  - sfxMixerGroup: {instanceID: 0}
+  - uiMixerGroup: {instanceID: 0}
+  - musicHighPassFilter: {instanceID: 0}
+  - musicLowPassFilter: {instanceID: 0}
+  - audioSourcePrefab: {fileID: 6389145729268047737, guid: f02ae3e85503cf0489174fc33cf71507, type: 3}
+  - mainMenuMusic: {instanceID: 0}
+  - gameplayMusic: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

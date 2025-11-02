@@ -91,11 +91,11 @@ public class UIElement : MonoBehaviour
     [TitleGroup("Events"), SerializeField, LabelText("📣 On Disable Completion")]
     public UnityEvent OnDisableFinish;
 
-    [TitleGroup("Audio"), SerializeField, LabelText("🔊 Show SFX")]
-    public AudioTrigger showSound = AudioTrigger.UI_Show;
+    // [TitleGroup("Audio"), SerializeField, LabelText("🔊 Show SFX")]
+    // public AudioTrigger showSound = AudioTrigger.UI_Show;
 
-    [TitleGroup("Audio"), SerializeField, LabelText("🔇 Hide SFX")]
-    public AudioTrigger hideSound = AudioTrigger.UI_Hide;
+    // [TitleGroup("Audio"), SerializeField, LabelText("🔇 Hide SFX")]
+    // public AudioTrigger hideSound = AudioTrigger.UI_Hide;
 
     #endregion
 
@@ -189,7 +189,8 @@ public class UIElement : MonoBehaviour
         });
 
         // SFX & Events
-        EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
+        //EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
+        //AudioManager.Instance.PlaySFX("");
         OnEnable?.Invoke();
         isEnabled = true;
     }
@@ -256,7 +257,7 @@ public class UIElement : MonoBehaviour
             }
         }
 
-        EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
+       // EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         OnDisable?.Invoke();
         isEnabled = false;
     }
@@ -336,7 +337,7 @@ public class UIElement : MonoBehaviour
 
         isEnabled = true;
 
-        if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
+        //if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(showSound));
         if (triggerEvents) OnEnable?.Invoke();
         
         // Trigger completion event immediately for instant enable
@@ -373,7 +374,7 @@ public class UIElement : MonoBehaviour
 
         isEnabled = false;
 
-        if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
+        //if (playAudio) EventBus<AudioEvent>.Raise(new AudioEvent(hideSound));
         if (triggerEvents) OnDisable?.Invoke();
         
         // Trigger completion event immediately for instant disable

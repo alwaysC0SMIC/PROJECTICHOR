@@ -76,19 +76,19 @@ public struct PathwayTransformsEvent : IEvent
 
 #endregion
 
-#region AUDIO
+// #region AUDIO
 
-public struct AudioEvent : IEvent
-{
-    public AudioTrigger id;
+// public struct AudioEvent : IEvent
+// {
+//     public AudioTrigger id;
 
-    public AudioEvent(AudioTrigger inID)
-    {
-        id = inID;
-    }
-}
+//     public AudioEvent(AudioTrigger inID)
+//     {
+//         id = inID;
+//     }
+// }
 
-#endregion
+// #endregion
 
 public struct EnemyDestroyedEvent : IEvent
 {

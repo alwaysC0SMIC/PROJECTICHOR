@@ -2,7 +2,9 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Sirenix.OdinInspector;   // <-- added
 using NUnit.Framework;
+
 public class Tower : MonoBehaviour
 {
     //VARIABLES
@@ -12,9 +14,9 @@ public class Tower : MonoBehaviour
     [SerializeField] public float currentHealth = 100.0f;
     [SerializeField] public RadialHealth radialHealth;
 
-    [SerializeField] private float damage = 100.0f;
+    [SerializeField] public float damage = 100.0f;
 
-    [SerializeField] private float attackRange = 5.0f;
+    [SerializeField] public float attackRange = 5.0f;
     [SerializeField] private float attackRate = 1.0f;
 
     //ATTACK PREFABS
@@ -26,8 +28,6 @@ public class Tower : MonoBehaviour
 
     private GameObject currentAttackEffect;
     private Transform currentAttackPoint;
-
-
 
     [SerializeField] Transform lanternKeeperAttackPoint;
     [SerializeField] Transform eyeTowerAttackPoint;
@@ -43,7 +43,6 @@ public class Tower : MonoBehaviour
     private Sequence rotationSequence;
     private Transform currentTarget;
     private bool isRotating = false;
-    //private bool isDead = false;
 
     // Optimization: Track enemies in range
     private List<Transform> enemiesInRange = new List<Transform>();
@@ -67,46 +66,39 @@ public class Tower : MonoBehaviour
     {
         defenderData = defender;
 
-
-
         //DISABLE ALL MODELS
         foreach (GameObject model in towerModels)
         {
             model.SetActive(false);
         }
 
-
         switch (defenderData.defenderName)
         {
             case "Lantern Keeper":
                 towerModels[0].SetActive(true);
                 currentAttackEffect = lanternKeeperAttackEffectPrefab;
-                currentAttackPoint = lanternKeeperAttackPoint; // Assuming lantern keeper uses the same attack point
+                currentAttackPoint = lanternKeeperAttackPoint;
                 break;
             case "Eye Tower":
                 towerModels[1].SetActive(true);
                 currentAttackEffect = eyeTownEffectPrefab;
-                currentAttackPoint = eyeTowerAttackPoint; // Assuming eye tower uses the same attack point
+                currentAttackPoint = eyeTowerAttackPoint;
                 break;
-
             case "Witch":
                 towerModels[2].SetActive(true);
                 currentAttackEffect = witchAttackEffectPrefab;
                 currentAttackPoint = witchAttackPoint;
                 break;
-
             case "Heart Reliquary":
                 towerModels[3].SetActive(true);
                 currentAttackEffect = heartAttackEffectPrefab;
                 currentAttackPoint = heartAttackPoint;
                 break;
-
             case "The Angel":
                 towerModels[4].SetActive(true);
                 currentAttackEffect = angelAttackEffectPrefab;
                 currentAttackPoint = angelAttackPoint;
                 break;
-
             default:
                 Debug.LogWarning($"[Tower] No model found for defender name: {defenderData.defenderName}");
                 break;
@@ -114,12 +106,9 @@ public class Tower : MonoBehaviour
 
         if (defenderData != null)
         {
-            //maxhealth = defenderData; // Example: health scales with cost
-            damage = defenderData.defenderDamage; // Example: damage scales with cost
-
+            damage = defenderData.defenderDamage;
             attackRange = defenderData.range;
-            attackRate = defenderData.attackSpeed; // Faster attack speed reduces cooldown
-
+            attackRate = defenderData.attackSpeed;
             maxhealth = defenderData.defenderHealth;
             currentHealth = maxhealth;
         }
@@ -129,11 +118,20 @@ public class Tower : MonoBehaviour
         }
 
         isInitialized = true;
+
+        // make sure health UI is correct
+        if (radialHealth != null)
+        {
+            radialHealth.Initialize(maxhealth);
+        }
+
+        // also tell tower UI if this is the selected one
+        RefreshTowerUIIfSelected();
     }
 
     public void UpgradeTower(int level)
     {
-        towerLevel = level;
+        towerLevel = Mathf.Max(1, level);
         UpdateTowerStats();
     }
 
@@ -141,90 +139,142 @@ public class Tower : MonoBehaviour
     {
         if (defenderData != null)
         {
-            damage = defenderData.defenderDamage * (1 + towerLevel / 20); // Example: damage scales with cost
+            // use float scaling so it actually changes per level
+            float scale = 1f + (towerLevel / 20f);
 
+            damage = defenderData.defenderDamage * scale;
             attackRange = defenderData.range;
-            attackRate = defenderData.attackSpeed * (1 + towerLevel / 20); // Faster attack speed reduces cooldown
+            // if higher level should attack faster, you usually want to DIVIDE the cooldown, not multiply
+            // but I’ll keep your intent and just make the scaling actually work:
+            attackRate = defenderData.attackSpeed / scale;
 
-            maxhealth = defenderData.defenderHealth * (1 + towerLevel / 20);
-            currentHealth = maxhealth * (1 + towerLevel / 20);
+            maxhealth = defenderData.defenderHealth * scale;
+            currentHealth = maxhealth;
+
+            // update health UI
+            if (radialHealth != null)
+            {
+                radialHealth.Initialize(maxhealth);
+            }
+
+            // make sure the tower UI shows the new numbers
+            RefreshTowerUIIfSelected();
         }
         else
         {
-            Debug.LogWarning("[Tower] Initialize called with null defenderData.");
+            Debug.LogWarning("[Tower] UpdateTowerStats called with null defenderData.");
         }
     }
 
     public void ResetTowerLevel()
     {
         towerLevel = 1;
-        damage = defenderData.defenderDamage; // Example: damage scales with cost
-        attackRange = defenderData.range;
-        attackRate = defenderData.attackSpeed; // Faster attack speed reduces cooldown
-        maxhealth = defenderData.defenderHealth;
-        currentHealth = maxhealth;
+        if (defenderData != null)
+        {
+            damage = defenderData.defenderDamage;
+            attackRange = defenderData.range;
+            attackRate = defenderData.attackSpeed;
+            maxhealth = defenderData.defenderHealth;
+            currentHealth = maxhealth;
+
+            if (radialHealth != null)
+            {
+                radialHealth.Initialize(maxhealth);
+            }
+        }
+
+        RefreshTowerUIIfSelected();
+    }
+
+    private void RefreshTowerUIIfSelected()
+    {
+        if (TowerUI.Instance != null && TowerUI.Instance.currentSelectedTower == this)
+        {
+            TowerUI.Instance.ForceRefresh();
+        }
+    }
+
+    // =========================
+    // ODIN DEBUG BUTTONS
+    // =========================
+    [Button("DEBUG: Upgrade +1")]
+    private void DebugUpgradeOne()
+    {
+        UpgradeTower(towerLevel + 1);
+    }
+
+    [Button("DEBUG: Upgrade +5")]
+    private void DebugUpgradeFive()
+    {
+        UpgradeTower(towerLevel + 5);
+    }
+
+    [Button("DEBUG: Reset to Level 1")]
+    private void DebugReset()
+    {
+        ResetTowerLevel();
+    }
+
+    [Button("DEBUG: Reapply From DefenderData")]
+    private void DebugReapplyFromData()
+    {
+        UpdateTowerStats();
     }
 
     void Start()
     {
         currentHealth = maxhealth;
-        radialHealth.Initialize(maxhealth);
+        if (radialHealth != null)
+        {
+            radialHealth.Initialize(maxhealth);
+        }
     }
 
     void OnEnable()
     {
         currentHealth = maxhealth;
-        radialHealth.Initialize(maxhealth);
+        if (radialHealth != null)
+        {
+            radialHealth.Initialize(maxhealth);
+        }
 
-        uiPrefab.SetActive(true);
+        if (uiPrefab != null)
+            uiPrefab.SetActive(true);
     }
 
     void OnDisable()
     {
-        uiPrefab.SetActive(false);
+        if (uiPrefab != null)
+            uiPrefab.SetActive(false);
         isInitialized = false;
     }
 
-    // Using overlap sphere for enemy detection instead of collider triggers for better performance control
     void Update()
     {
-        // Skip everything if tower is dead
-        //if (isDead) return;
-
         if (isInitialized)
         {
-
-            // Update enemies in range using overlap sphere
             UpdateEnemiesInRange();
-
-            // Find and prioritize targets from enemies in range
             FindAndPrioritizeTarget();
 
-            // Continuously rotate towards current target
             if (currentTarget != null && !isRotating)
             {
                 FaceTarget(currentTarget);
             }
 
-            // ATTACK 
             if (GameTime.TotalTime >= nextAttackTime && currentTarget != null)
             {
                 Attack(currentTarget);
                 nextAttackTime = GameTime.TotalTime + attackRate;
             }
-
         }
     }
 
     private void UpdateEnemiesInRange()
     {
-        // Clear the current list
         enemiesInRange.Clear();
 
-        // Use overlap sphere to detect enemies
         Collider[] colliders = Physics.OverlapSphere(transform.position, attackRange, enemyLayerMask);
 
-        // Add valid enemy transforms to the list
         foreach (Collider col in colliders)
         {
             if (col != null && col.transform != null)
@@ -236,7 +286,6 @@ public class Tower : MonoBehaviour
 
     private void FindAndPrioritizeTarget()
     {
-        // Clean up null references (destroyed enemies)
         enemiesInRange.RemoveAll(enemy => enemy == null);
 
         Transform bestTarget = null;
@@ -246,13 +295,11 @@ public class Tower : MonoBehaviour
         {
             if (enemy != null)
             {
-                // Get the enemy's path progress
                 FollowWP followWP = enemy.GetComponent<FollowWP>();
                 if (followWP != null)
                 {
-                    float progress = followWP.GetPathProgress(); // Get progress along path
+                    float progress = followWP.GetPathProgress();
 
-                    // Prioritize enemy furthest along the path
                     if (progress > furthestProgress)
                     {
                         furthestProgress = progress;
@@ -261,7 +308,6 @@ public class Tower : MonoBehaviour
                 }
                 else
                 {
-                    // Fallback: if no FollowWP script, use distance as priority (closer = further along path assumption)
                     if (bestTarget == null)
                     {
                         bestTarget = enemy;
@@ -273,55 +319,50 @@ public class Tower : MonoBehaviour
         currentTarget = bestTarget;
     }
 
-    // Method to take damage
     public void TakeDamage(float damageAmount)
     {
-        //if (isDead) return;
-
         currentHealth -= damageAmount;
         currentHealth = Mathf.Max(0, currentHealth);
 
-        // Update radial health bar
         if (radialHealth != null)
         {
             float delta = -damageAmount;
             radialHealth.ChangeHealth(delta);
         }
 
-        //Debug.Log($"Tower took {damageAmount} damage. Health: {currentHealth}/{maxhealth}");
-
-        // Check if tower should die
         if (currentHealth <= 0)
         {
             Die();
         }
+
+        // if we damage it during debug and UI is open, update it
+        RefreshTowerUIIfSelected();
     }
 
-    // Method to handle tower death
     private void Die()
     {
-        rotationSequence.Kill();
+        if (rotationSequence != null)
+            rotationSequence.Kill();
+
         currentTarget = null;
-        hexTile.OnTowerDestroyed();
+
+        if (hexTile != null)
+            hexTile.OnTowerDestroyed();
+
         gameObject.SetActive(false);
         isInitialized = false;
     }
 
     private void Attack(Transform target)
     {
-        if (eyeTownEffectPrefab != null)
+        if (currentAttackEffect != null)
         {
-            // Make tower face the target
             FaceTarget(target);
-
-            //Debug.Log($"[Tower] Attacking target {target.name} at position {target.position}");
-            //Debug.Log($"[Tower] Spawning projectile at {attackPoint.position} with rotation {attackPoint.rotation}");
 
             GameObject projectileObj = Instantiate(currentAttackEffect, currentAttackPoint.position, currentAttackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();
             attack?.SetTarget(target, damage);
-            projectileObj.transform.localScale = Vector3.one; // Ensure projectile is visible    
-
+            projectileObj.transform.localScale = Vector3.one;
         }
         else
         {
@@ -331,27 +372,20 @@ public class Tower : MonoBehaviour
 
     private void FaceTarget(Transform target)
     {
-
-        // Calculate direction to target (only Y axis rotation)
         Vector3 direction = (target.position - transform.position);
-        direction.y = 0; // Keep tower upright, only rotate on Y axis
+        direction.y = 0;
         direction = direction.normalized;
 
-        // Create rotation looking towards target
         if (direction != Vector3.zero)
         {
             Quaternion lookRotation = Quaternion.LookRotation(direction);
-
-            // Calculate the Y rotation angle
             float targetYRotation = lookRotation.eulerAngles.y;
             float currentYRotation = transform.eulerAngles.y;
 
-            // Check if rotation is needed (avoid unnecessary rotations)
             float angleDifference = Mathf.DeltaAngle(currentYRotation, targetYRotation);
 
-            if (Mathf.Abs(angleDifference) > 1f) // Only rotate if difference is significant
+            if (Mathf.Abs(angleDifference) > 1f)
             {
-                // Kill any existing rotation sequence
                 if (rotationSequence != null)
                 {
                     rotationSequence.Kill();
@@ -359,7 +393,6 @@ public class Tower : MonoBehaviour
 
                 isRotating = true;
 
-                // Smooth rotation using DOTween
                 rotationSequence = DOTween.Sequence()
                     .Append(transform.DORotate(new Vector3(0, targetYRotation, 0), rotationSpeed))
                     .SetEase(Ease.OutQuad)
@@ -373,24 +406,19 @@ public class Tower : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Draw attack range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
-        // Draw line to current target
         if (currentTarget != null)
         {
             Gizmos.color = Color.red;
             Gizmos.DrawLine(transform.position, currentTarget.position);
-
-            // Draw a small sphere at the target position
             Gizmos.DrawWireSphere(currentTarget.position, 0.5f);
         }
     }
 
     void OnDestroy()
     {
-        // Clean up DOTween sequence when tower is destroyed
         if (rotationSequence != null)
         {
             rotationSequence.Kill();

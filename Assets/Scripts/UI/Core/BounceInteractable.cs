@@ -128,17 +128,17 @@ public abstract class BounceInteractable : MonoBehaviour
 
     #region Audio
 
-    [TitleGroup("Audio")]
-    [SerializeField, Tooltip("Sound triggered on click. Raised via EventBus<AudioEvent>.")]
-    public AudioTrigger clickSound = AudioTrigger.UI_Click;
+    // [TitleGroup("Audio")]
+    // [SerializeField, Tooltip("Sound triggered on click. Raised via EventBus<AudioEvent>.")]
+    // public AudioTrigger clickSound = AudioTrigger.UI_Click;
 
-    [TitleGroup("Audio")]
-    [SerializeField, Tooltip("Sound triggered when hover begins. Raised via EventBus<AudioEvent>.")]
-    public AudioTrigger hoverSound = AudioTrigger.UI_Hover;
+    // [TitleGroup("Audio")]
+    // [SerializeField, Tooltip("Sound triggered when hover begins. Raised via EventBus<AudioEvent>.")]
+    // public AudioTrigger hoverSound = AudioTrigger.UI_Hover;
 
-    [TitleGroup("Audio")]
-    [SerializeField, Tooltip("Sound triggered when hover ends. Raised via EventBus<AudioEvent>.")]
-    public AudioTrigger exitHoverSound = AudioTrigger.UI_ExitHover;
+    // [TitleGroup("Audio")]
+    // [SerializeField, Tooltip("Sound triggered when hover ends. Raised via EventBus<AudioEvent>.")]
+    // public AudioTrigger exitHoverSound = AudioTrigger.UI_ExitHover;
 
     #endregion
 
@@ -215,28 +215,28 @@ public abstract class BounceInteractable : MonoBehaviour
     [Tooltip("Nova OnClick handler. Plays click SFX and calls OnClick().")]
     public virtual void Click(Gesture.OnClick evt)
     {
-        EventBus<AudioEvent>.Raise(new AudioEvent(clickSound));
+        //EventBus<AudioEvent>.Raise(new AudioEvent(clickSound));
         OnClick();
     }
 
     [Tooltip("Nova OnRelease handler (alias for Click). Plays click SFX and calls OnClick().")]
     public virtual void Press(Gesture.OnRelease evt)
     {
-        EventBus<AudioEvent>.Raise(new AudioEvent(clickSound));
+        //EventBus<AudioEvent>.Raise(new AudioEvent(clickSound));
         OnClick();
     }
 
     [Tooltip("Nova OnHover handler. Starts hover animation (spring OR tween based on Interaction Animation).")]
     public virtual void BeginHover(Gesture.OnHover evt)
     {
-        EventBus<AudioEvent>.Raise(new AudioEvent(hoverSound));
+        //EventBus<AudioEvent>.Raise(new AudioEvent(hoverSound));
         HoverAnimation();
     }
 
     [Tooltip("Nova OnUnhover handler. Starts exit animation (spring OR tween based on Interaction Animation).")]
     public virtual void ExitHover(Gesture.OnUnhover evt)
     {
-        EventBus<AudioEvent>.Raise(new AudioEvent(exitHoverSound));
+        //EventBus<AudioEvent>.Raise(new AudioEvent(exitHoverSound));
         ExitHoverAnimation();
     }
 
