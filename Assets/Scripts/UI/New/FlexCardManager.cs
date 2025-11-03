@@ -241,13 +241,13 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
             // Adjust start index to maintain the same visible window
             currentStartIndex = hand.Count - handSize;
             
-            Debug.Log($"[FlexCardManager] Wrapped around to beginning - moved card {cardToMove.name} to back");
+            //Debug.Log($"[FlexCardManager] Wrapped around to beginning - moved card {cardToMove.name} to back");
         }
         else
         {
             // Normal right scroll
             currentStartIndex++;
-            Debug.Log($"[FlexCardManager] Scrolled right - new start index: {currentStartIndex}");
+            //Debug.Log($"[FlexCardManager] Scrolled right - new start index: {currentStartIndex}");
         }
         
         UpdateVisibleCards();
@@ -264,7 +264,7 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
         if(!canInteract) return;
         canScroll = true;
         HoverAnimation();
-        Debug.Log("[FlexCardManager] Pointer entered - scrolling enabled and hover animation triggered");
+        //Debug.Log("[FlexCardManager] Pointer entered - scrolling enabled and hover animation triggered");
     }
 
     // IPointerExitHandler implementation
@@ -273,6 +273,6 @@ public class FlexCardManager : MonoBehaviour, IPointerEnterHandler, IPointerExit
         if(!canInteract) return;
         canScroll = false;
         UnHoverAnimation();
-        Debug.Log("[FlexCardManager] Pointer exited - scrolling disabled and unhover animation triggered");
+        //Debug.Log("[FlexCardManager] Pointer exited - scrolling disabled and unhover animation triggered");
     }
 }

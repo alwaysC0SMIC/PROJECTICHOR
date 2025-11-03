@@ -85,6 +85,8 @@ public class Enemy : MonoBehaviour
 
         Instantiate(deathEffect, transform.position, transform.rotation);
 
+        AudioManager.Instance.PlaySFX("SFX_EnemyDeath");
+
         transform.DOScale(Vector3.zero, 0.2f)
     .SetEase(Ease.InBack) // optional, adds a nice shrinking effect
     .OnComplete(() => Destroy(gameObject));

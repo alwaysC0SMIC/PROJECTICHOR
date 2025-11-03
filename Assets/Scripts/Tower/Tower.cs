@@ -358,7 +358,7 @@ public class Tower : MonoBehaviour
         if (currentAttackEffect != null)
         {
             FaceTarget(target);
-
+            AudioManager.Instance.PlaySFX("SFX_TowerAttack");
             GameObject projectileObj = Instantiate(currentAttackEffect, currentAttackPoint.position, currentAttackPoint.rotation);
             ITarget attack = projectileObj.GetComponent<ITarget>();
             attack?.SetTarget(target, damage);

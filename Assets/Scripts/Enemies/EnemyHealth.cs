@@ -16,6 +16,7 @@ public class EnemyHealth : MonoBehaviour
 
     public void TakeDamage(float damage)
     {
+        AudioManager.Instance.PlaySFX("SFX_EnemyDamge");
         currentHealth -= damage;
         DeathCheck();
     }
